@@ -27,7 +27,7 @@ jobs:
           curl -s -X GET \
             -H "Authorization: Bearer $ORIGIN_TOKEN" \
             "$ORIGIN_HOST/api/2.0/workspace/export?path=$NOTEBOOK_BASE/$nb_encoded&format=SOURCE&direct_download=true" \
-            --output "notebooks_to_deploy/$nb.py"
+            --output "notebooks_to_deploy/$nb.ipynb" # <- Extensión .ipynb
         done
 
     - name: Deploy notebooks to Destination Workspace prepracion ambiente
@@ -50,7 +50,7 @@ jobs:
             -H "Content-Type: multipart/form-data" \
             -F "path=$dest_path" \
             -F "format=SOURCE" \
-            -F "language=PYTHON" \
+            -F "format=JUPYTER" \  # <- Cambiado a JUPYTER
             -F "overwrite=true" \
             -F "content=@$file" \
             "$DEST_HOST/api/2.0/workspace/import")
