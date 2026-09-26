@@ -27,7 +27,7 @@ jobs:
           curl -s -X GET \
             -H "Authorization: Bearer $ORIGIN_TOKEN" \
             "$ORIGIN_HOST/api/2.0/workspace/export?path=$NOTEBOOK_BASE/$nb_encoded&format=SOURCE&direct_download=true" \
-            --output "notebooks_to_deploy/$nb.ipynb" # <- Extensión .ipynb
+            --output "notebooks_to_deploy/$nb.ipynb"
         done
 
     - name: Deploy notebooks to Destination Workspace prepracion ambiente
