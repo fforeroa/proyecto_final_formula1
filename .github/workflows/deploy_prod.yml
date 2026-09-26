@@ -15,16 +15,18 @@ jobs:
     
     - name: Export multiple notebooks preparacion ambiente (raw)
       run: |
-        ORIGIN_HOST=${{ secrets.DATABRICKS_ORIGIN_HOST }}
+        ORIGIN_HOST=${{ secrets.DATABRICKS_DEST_HOST }}
         ORIGIN_TOKEN=${{ secrets.DATABRICKS_ORIGIN_TOKEN }}
         NOTEBOOK_BASE="/Workspace/Users/fcamifox@gmail.com/proyecto_final_formula1/PrepAmb"
         NOTEBOOKS=("01.Setup Project Environment" "02.Ayuda_Bronze" "03.Configuracion_Ambiente" "04.Ayuda_Silver")  # Agrega más
         mkdir -p notebooks_to_deploy
         for nb in "${NOTEBOOKS[@]}"; do
+          
           echo "Exportando $nb en modo raw..."
+          nb_encoded="${nb// /%20}"
           curl -s -X GET \
             -H "Authorization: Bearer $ORIGIN_TOKEN" \
-            "$ORIGIN_HOST/api/2.0/workspace/export?path=$NOTEBOOK_BASE/$nb&format=SOURCE&direct_download=true" \
+            "$ORIGIN_HOST/api/2.0/workspace/export?path=$NOTEBOOK_BASE/$nb_encoded&format=SOURCE&direct_download=true" \
             --output "notebooks_to_deploy/$nb.py"
         done
 
