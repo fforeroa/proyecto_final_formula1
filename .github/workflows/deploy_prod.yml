@@ -126,7 +126,7 @@ jobs:
         PROD_STORAGE="datalakefforeroprod03" 
         CATALOG="formula1_prod"
         CREDENTIAL="credential_formula1_prod"
-        NOTEBOOK_PATH="Workspace/Users/fcamifox@gmail.com/proyecto_final_formula1/PrepAmb/01.Setup Project Environment"
+        NOTEBOOK_PATH="/Workspace/Users/fcamifox@gmail.com/proyecto_final_formula1/PrepAmb/01.Setup Project Environment"
         
         # 3. Payload JSON para ejecución efímera (runs/submit)
         # Al no declarar ningún clúster, Databricks asume Serverless de forma automática.
