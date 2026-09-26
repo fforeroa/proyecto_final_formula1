@@ -63,3 +63,55 @@ jobs:
             "$DEST_HOST/api/2.0/workspace/import")
           echo "Response: $response"
         done
+    
+     - name: Export multiple notebooks bronze
+      run: |
+        ORIGIN_HOST=${{ secrets.DATABRICKS_ORIGIN_HOST }}
+        ORIGIN_TOKEN=${{ secrets.DATABRICKS_ORIGIN_TOKEN }}
+        NOTEBOOK_BASE="/Workspace/Users/fcamifox@gmail.com/proyecto_final_formula1/proceso/01-Bronze"
+        NOTEBOOKS=("01.Ingest Circuits File" "02.Ingest Races File" "03.Ingest Constructors File" "04.Ingest Drivers File" "05.Ingest Results File" "06.Ingest Sprints File")
+        
+        rm -rf notebooks_to_deploy
+        mkdir -p notebooks_to_deploy
+        
+        for nb in "${NOTEBOOKS[@]}"; do
+          echo "Exportando $nb en formato DBC..."
+          nb_encoded="${nb// /%20}"
+          
+          curl -f -s -X GET \
+            -H "Authorization: Bearer $ORIGIN_TOKEN" \
+            "$ORIGIN_HOST/api/2.0/workspace/export?path=$NOTEBOOK_BASE/$nb_encoded&format=DBC&direct_download=true" \
+            --output "notebooks_to_deploy/$nb.dbc"
+        done
+  - name: Deploy notebooks to Destination Workspace bronze
+      run: |
+        DEST_HOST=${{ secrets.DATABRICKS_DEST_HOST }}
+        DEST_TOKEN=${{ secrets.DATABRICKS_DEST_TOKEN }}
+        DEST_BASE="/Workspace/Users/fcamifox@gmail.com/proyecto_final_formula1/proceso/01-Bronze"
+        
+        echo "Creando carpeta base $DEST_BASE si no existe..."
+        curl -f -s -X POST \
+          -H "Authorization: Bearer $DEST_TOKEN" \
+          -H "Content-Type: application/json" \
+          -d "{\"path\":\"$DEST_BASE\"}" \
+          "$DEST_HOST/api/2.0/workspace/mkdirs"
+          
+        # Procesamos la extensión .dbc de forma nativa
+        for file in notebooks_to_deploy/*.dbc; do
+          [ -e "$file" ] || continue
+          
+          name=$(basename "$file" .dbc)
+          dest_path="$DEST_BASE/$name"
+          
+          echo "Importando $file → $dest_path"
+          response=$(curl -f -s -X POST \
+            -H "Authorization: Bearer $DEST_TOKEN" \
+            -H "Content-Type: multipart/form-data" \
+            -F "path=$dest_path" \
+            -F "format=DBC" \
+            -F "overwrite=true" \
+            -F "content=@$file" \
+            "$DEST_HOST/api/2.0/workspace/import")
+          echo "Response: $response"
+        done
+    
