@@ -13,21 +13,23 @@ jobs:
     - name: Install jq & curl
       run: sudo apt-get update && sudo apt-get install -y jq curl
     
-    - name: Export multiple notebooks preparacion ambiente (raw)
+    - name: Export multiple notebooks preparacion ambiente
       run: |
         ORIGIN_HOST=${{ secrets.DATABRICKS_ORIGIN_HOST }}
         ORIGIN_TOKEN=${{ secrets.DATABRICKS_ORIGIN_TOKEN }}
         NOTEBOOK_BASE="/Workspace/Users/fcamifox@gmail.com/proyecto_final_formula1/PrepAmb"
-        NOTEBOOKS=("01.Setup Project Environment" "02.Ayuda_Bronze" "03.Configuracion_Ambiente" "04.Ayuda_Silver")  # Agrega más
+        NOTEBOOKS=("01.Setup Project Environment" "02.Ayuda_Bronze" "03.Configuracion_Ambiente" "04.Ayuda_Silver")
+        
         mkdir -p notebooks_to_deploy
         for nb in "${NOTEBOOKS[@]}"; do
-          
-          echo "Exportando $nb en modo raw..."
+          echo "Exportando $nb en formato DBC..."
           nb_encoded="${nb// /%20}"
-          curl -s -X GET \
+          
+          # Usamos formato DBC para garantizar compatibilidad multi-lenguaje
+          curl -f -s -X GET \
             -H "Authorization: Bearer $ORIGIN_TOKEN" \
-            "$ORIGIN_HOST/api/2.0/workspace/export?path=$NOTEBOOK_BASE/$nb_encoded&format=SOURCE&direct_download=true" \
-            --output "notebooks_to_deploy/$nb.ipynb"
+            "$ORIGIN_HOST/api/2.0/workspace/export?path=$NOTEBOOK_BASE/$nb_encoded&format=DBC&direct_download=true" \
+            --output "notebooks_to_deploy/$nb.dbc"
         done
 
     - name: Deploy notebooks to Destination Workspace prepracion ambiente
@@ -35,25 +37,29 @@ jobs:
         DEST_HOST=${{ secrets.DATABRICKS_DEST_HOST }}
         DEST_TOKEN=${{ secrets.DATABRICKS_DEST_TOKEN }}
         DEST_BASE="/Workspace/Users/fcamifox@gmail.com/proyecto_final_formula1/PrepAmb"
-        for file in notebooks_to_deploy/*.ipynb; do
+        
+        echo "Creando carpeta base $DEST_BASE si no existe..."
+        curl -f -s -X POST \
+          -H "Authorization: Bearer $DEST_TOKEN" \
+          -H "Content-Type: application/json" \
+          -d "{\"path\":\"$DEST_BASE\"}" \
+          "$DEST_HOST/api/2.0/workspace/mkdirs"
+          
+        # Procesamos la extensión .dbc de forma nativa
+        for file in notebooks_to_deploy/*.dbc; do
           [ -e "$file" ] || continue
-          name=$(basename "$file" .ipynb)
+          
+          name=$(basename "$file" .dbc)
           dest_path="$DEST_BASE/$name"
-          echo "Creando carpeta $DEST_BASE si no existe..."
-          curl -s -X POST \
-            -H "Authorization: Bearer $DEST_TOKEN" \
-            -H "Content-Type: application/json" \
-            -d "{\"path\":\"$DEST_BASE\"}" \
-            "$DEST_HOST/api/2.0/workspace/mkdirs"
+          
           echo "Importando $file → $dest_path"
-          response=$(curl -s -X POST \
+          response=$(curl -f -s -X POST \
             -H "Authorization: Bearer $DEST_TOKEN" \
             -H "Content-Type: multipart/form-data" \
             -F "path=$dest_path" \
-            -F "format=JUPYTER" \
+            -F "format=DBC" \
             -F "overwrite=true" \
             -F "content=@$file" \
             "$DEST_HOST/api/2.0/workspace/import")
           echo "Response: $response"
         done
-
