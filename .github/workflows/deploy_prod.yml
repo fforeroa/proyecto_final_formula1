@@ -35,8 +35,9 @@ jobs:
         DEST_HOST=${{ secrets.DATABRICKS_DEST_HOST }}
         DEST_TOKEN=${{ secrets.DATABRICKS_DEST_TOKEN }}
         DEST_BASE="/Workspace/Users/fcamifox@gmail.com/proyecto_final_formula1/PrepAmb"
-        for file in notebooks_to_deploy/*.py; do
-          name=$(basename "$file" .py)
+        for file in notebooks_to_deploy/*.ipynb; do
+          [ -e "$file" ] || continue
+          name=$(basename "$file" .ipynb)
           dest_path="$DEST_BASE/$name"
           echo "Creando carpeta $DEST_BASE si no existe..."
           curl -s -X POST \
