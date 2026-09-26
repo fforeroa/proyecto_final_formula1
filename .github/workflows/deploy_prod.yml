@@ -15,7 +15,7 @@ jobs:
     
     - name: Export multiple notebooks preparacion ambiente (raw)
       run: |
-        ORIGIN_HOST=${{ secrets.DATABRICKS_DEST_HOST }}
+        ORIGIN_HOST=${{ secrets.DATABRICKS_ORIGIN_HOST }}
         ORIGIN_TOKEN=${{ secrets.DATABRICKS_ORIGIN_TOKEN }}
         NOTEBOOK_BASE="/Workspace/Users/fcamifox@gmail.com/proyecto_final_formula1/PrepAmb"
         NOTEBOOKS=("01.Setup Project Environment" "02.Ayuda_Bronze" "03.Configuracion_Ambiente" "04.Ayuda_Silver")  # Agrega más
@@ -56,3 +56,4 @@ jobs:
             "$DEST_HOST/api/2.0/workspace/import")
           echo "Response: $response"
         done
+
