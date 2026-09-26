@@ -64,7 +64,7 @@ jobs:
           echo "Response: $response"
         done
     
-     - name: Export multiple notebooks bronze
+    - name: Export multiple notebooks bronze
       run: |
         ORIGIN_HOST=${{ secrets.DATABRICKS_ORIGIN_HOST }}
         ORIGIN_TOKEN=${{ secrets.DATABRICKS_ORIGIN_TOKEN }}
@@ -83,7 +83,8 @@ jobs:
             "$ORIGIN_HOST/api/2.0/workspace/export?path=$NOTEBOOK_BASE/$nb_encoded&format=DBC&direct_download=true" \
             --output "notebooks_to_deploy/$nb.dbc"
         done
-  - name: Deploy notebooks to Destination Workspace bronze
+    
+    - name: Deploy notebooks to Destination Workspace bronze
       run: |
         DEST_HOST=${{ secrets.DATABRICKS_DEST_HOST }}
         DEST_TOKEN=${{ secrets.DATABRICKS_DEST_TOKEN }}
@@ -114,4 +115,3 @@ jobs:
             "$DEST_HOST/api/2.0/workspace/import")
           echo "Response: $response"
         done
-    
