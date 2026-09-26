@@ -157,7 +157,7 @@ jobs:
           -H "Authorization: Bearer $DATABRICKS_TOKEN" \
           -H "Content-Type: application/json" \
           -d @run_config.json \
-          "https://$DATABRICKS_HOST/api/2.1/jobs/runs/submit")
+          "$DATABRICKS_HOST/api/2.1/jobs/runs/submit")
           
         echo "Petición aceptada por Databricks."
         echo "Respuesta del Servidor: $RESPONSE"
