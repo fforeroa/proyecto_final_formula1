@@ -115,3 +115,54 @@ jobs:
             "$DEST_HOST/api/2.0/workspace/import")
           echo "Response: $response"
         done
+
+    - name: Ejecutar Cuaderno Directamente de setup
+      run: |
+        # 1. Configurar variables de acceso
+        export DATABRICKS_HOST="${{ secrets.DATABRICKS_DEST_HOST }}"
+        export DATABRICKS_TOKEN="${{ secrets.DATABRICKS_DEST_TOKEN }}"
+        
+        # 2. Definir parámetros de entorno
+        PROD_STORAGE="datalakefforeroprod03" 
+        CATALOG="formula1_prod"
+        CREDENTIAL="credential_formula1_prod"
+        NOTEBOOK_PATH="Workspace/Users/fcamifox@gmail.com/proyecto_final_formula1/PrepAmb/01.Setup Project Environment"
+        
+        # 3. Payload JSON para ejecución efímera (runs/submit)
+        # Al no declarar ningún clúster, Databricks asume Serverless de forma automática.
+        cat <<EOF > run_config.json
+        {
+          "run_name": "Ejecucion Efimera Serverless desde GitHub Actions",
+          "tasks": [
+            {
+              "task_key": "ejecucion_unica_notebook",
+              "notebook_task": {
+                "notebook_path": "$NOTEBOOK_PATH",
+                "source": "WORKSPACE",
+                "base_parameters": {
+                  "storageName": "$PROD_STORAGE",
+                  "catalog": "$CATALOG",
+                  "credential": "$CREDENTIAL"
+                }
+              }
+            }
+          ]
+        }
+        EOF
+
+        # 4. Enviar la petición HTTP POST a la API de Databricks
+        echo "Disparando ejecución efímera Serverless para: $NOTEBOOK_PATH..."
+        
+        RESPONSE=$(curl -f -s -X POST \
+          -H "Authorization: Bearer $DATABRICKS_TOKEN" \
+          -H "Content-Type: application/json" \
+          -d @run_config.json \
+          "https://$DATABRICKS_HOST/api/2.1/jobs/runs/submit")
+          
+        echo "Petición aceptada por Databricks."
+        echo "Respuesta del Servidor: $RESPONSE"
+        
+        # 5. Extraer el run_id generado para el monitoreo
+        RUN_ID=$(echo "$RESPONSE" | jq -r '.run_id')
+        echo "El notebook se está ejecutando en segundo plano bajo el Run ID: $RUN_ID"
+
