@@ -49,7 +49,7 @@ jobs:
             -H "Authorization: Bearer $DEST_TOKEN" \
             -H "Content-Type: multipart/form-data" \
             -F "path=$dest_path" \
-            -F "format=JUPYTER" \  # <- Cambiado a JUPYTER
+            -F "format=JUPYTER" \
             -F "overwrite=true" \
             -F "content=@$file" \
             "$DEST_HOST/api/2.0/workspace/import")
