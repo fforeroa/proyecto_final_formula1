@@ -497,15 +497,42 @@ jobs:
 
         echo ""
         echo "========================================"
+        echo "BUSCANDO OUTPUT DE LA TAREA"
+        echo "========================================"
+
+        TASK_RUN_ID=$(echo "$RUN_STATUS" | jq -r \
+          '.tasks[] | select(.task_key=="ingest_circuits") | .run_id' | tail -1)
+
+        echo "TASK_RUN_ID = $TASK_RUN_ID"
+
+        if [ "$TASK_RUN_ID" = "null" ] || [ -z "$TASK_RUN_ID" ]; then
+          echo "ERROR: No se encontró el run_id de la tarea ingest_circuits"
+          exit 1
+        fi
+
+        echo ""
+        echo "========================================"
         echo "OUTPUT DEL NOTEBOOK"
         echo "========================================"
 
-        OUTPUT=$(curl -f -sS \
+        OUTPUT_RESPONSE=$(curl -sS \
+          -w "\n%{http_code}" \
           -X GET \
           -H "Authorization: Bearer $DATABRICKS_TOKEN" \
-          "$DATABRICKS_HOST/api/2.1/jobs/runs/get-output?run_id=$RUN_ID")
+          "$DATABRICKS_HOST/api/2.1/jobs/runs/get-output?run_id=$TASK_RUN_ID")
 
-        echo "$OUTPUT" | jq .
+        OUTPUT_HTTP_CODE=$(echo "$OUTPUT_RESPONSE" | tail -n 1)
+        OUTPUT_BODY=$(echo "$OUTPUT_RESPONSE" | sed '$d')
+
+        echo "HTTP CODE = $OUTPUT_HTTP_CODE"
+        echo ""
+
+        if [ "$OUTPUT_HTTP_CODE" != "200" ]; then
+          echo "ERROR obteniendo output del notebook:"
+          echo "$OUTPUT_BODY" | jq . 2>/dev/null || echo "$OUTPUT_BODY"
+        else
+          echo "$OUTPUT_BODY" | jq .
+        fi
 
 
         # ------------------------------------------------------------
