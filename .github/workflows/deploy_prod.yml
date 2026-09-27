@@ -381,12 +381,7 @@ jobs:
         create_schema "bronze" "bronze"
         create_schema "silver" "silver"
         create_schema "gold" "golden"
-
-
-    # ============================================================
-    # 12. EJECUTAR NOTEBOOK BRONZE EN SERVERLESS
-    # ============================================================
-
+ 
     - name: Ejecutar Ingest Circuits File PROD
       env:
         DATABRICKS_HOST: ${{ secrets.DATABRICKS_DEST_HOST }}
@@ -415,23 +410,113 @@ jobs:
         }
         EOF
 
-        echo "Configuracion del Run:"
+        echo "========================================"
+        echo "CONFIGURACION DEL JOB"
+        echo "========================================"
         cat run_config.json
+        echo "========================================"
 
-        RESPONSE=$(curl -f -s \
+
+        # ------------------------------------------------------------
+        # INICIAR RUN
+        # ------------------------------------------------------------
+
+        RESPONSE=$(curl -f -sS \
           -X POST \
           -H "Authorization: Bearer $DATABRICKS_TOKEN" \
           -H "Content-Type: application/json" \
           -d @run_config.json \
           "$DATABRICKS_HOST/api/2.1/jobs/runs/submit")
 
+        echo "Respuesta:"
         echo "$RESPONSE"
 
         RUN_ID=$(echo "$RESPONSE" | jq -r '.run_id')
 
-        echo "RUN_ID=$RUN_ID"
+        echo "========================================"
+        echo "RUN_ID = $RUN_ID"
+        echo "========================================"
+
 
         if [ "$RUN_ID" = "null" ] || [ -z "$RUN_ID" ]; then
-          echo "ERROR: No se pudo iniciar el notebook"
+          echo "ERROR: No se pudo iniciar el Job"
           exit 1
         fi
+
+
+        # ------------------------------------------------------------
+        # ESPERAR A QUE TERMINE
+        # ------------------------------------------------------------
+
+        echo "Esperando ejecucion del notebook..."
+
+        while true; do
+
+          RUN_STATUS=$(curl -f -sS \
+            -X GET \
+            -H "Authorization: Bearer $DATABRICKS_TOKEN" \
+            "$DATABRICKS_HOST/api/2.1/jobs/runs/get?run_id=$RUN_ID")
+
+          LIFE_CYCLE=$(echo "$RUN_STATUS" | jq -r '.state.life_cycle_state')
+          RESULT_STATE=$(echo "$RUN_STATUS" | jq -r '.state.result_state')
+          STATE_MESSAGE=$(echo "$RUN_STATUS" | jq -r '.state.state_message')
+
+          echo ""
+          echo "----------------------------------------"
+          echo "Life Cycle : $LIFE_CYCLE"
+          echo "Result     : $RESULT_STATE"
+          echo "Message    : $STATE_MESSAGE"
+          echo "----------------------------------------"
+
+          if [ "$LIFE_CYCLE" = "TERMINATED" ] || \
+            [ "$LIFE_CYCLE" = "SKIPPED" ] || \
+            [ "$LIFE_CYCLE" = "INTERNAL_ERROR" ]; then
+            break
+          fi
+
+          sleep 10
+
+        done
+
+
+        # ------------------------------------------------------------
+        # MOSTRAR RESULTADO
+        # ------------------------------------------------------------
+
+        echo ""
+        echo "========================================"
+        echo "RESULTADO FINAL"
+        echo "========================================"
+
+        echo "$RUN_STATUS" | jq .
+
+
+        # ------------------------------------------------------------
+        # OBTENER OUTPUT DEL NOTEBOOK
+        # ------------------------------------------------------------
+
+        echo ""
+        echo "========================================"
+        echo "OUTPUT DEL NOTEBOOK"
+        echo "========================================"
+
+        OUTPUT=$(curl -f -sS \
+          -X GET \
+          -H "Authorization: Bearer $DATABRICKS_TOKEN" \
+          "$DATABRICKS_HOST/api/2.1/jobs/runs/get-output?run_id=$RUN_ID")
+
+        echo "$OUTPUT" | jq .
+
+
+        # ------------------------------------------------------------
+        # VALIDAR RESULTADO
+        # ------------------------------------------------------------
+
+        if [ "$RESULT_STATE" != "SUCCESS" ]; then
+          echo ""
+          echo "ERROR: El notebook termino con estado $RESULT_STATE"
+          exit 1
+        fi
+
+        echo ""
+        echo "Notebook ejecutado correctamente."
