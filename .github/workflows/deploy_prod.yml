@@ -259,7 +259,6 @@ jobs:
               -H "Content-Type: application/json" \
               -d "{
                 \"name\": \"$CATALOG\",
-                \"catalog_type\": \"MANAGED_CATALOG\",
                 \"storage_root\": \"abfss://metastore@${STORAGE_NAME}.dfs.core.windows.net/\",
                 \"comment\": \"Catalogo para la arquitectura medallion del proyecto Formula1\"
               }" \
