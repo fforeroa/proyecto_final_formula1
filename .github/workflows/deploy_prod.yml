@@ -124,18 +124,20 @@ jobs:
       run: |
 
         DEST_PATH="/Workspace/Users/fcamifox@gmail.com/proyecto_final_formula1/PrepAmb"
+        echo "Creando directorio:"
+        echo "$DEST_PATH"
 
-        curl -f -s \
+        curl -f -sS \
           -X POST \
           -H "Authorization: Bearer $DATABRICKS_TOKEN" \
           -H "Content-Type: application/json" \
           -d "{
             \"path\": \"$DEST_PATH\",
-            \"format\": \"SOURCE\",
-            \"language\": \"PYTHON\",
             \"overwrite\": true
           }" \
-          "$DATABRICKS_HOST/api/2.0/workspace/import"
+           "$DATABRICKS_HOST/api/2.0/workspace/mkdirs"
+        
+        echo "Directorio creado o ya existente"
 
         for FILE in exported_prep/*.json; do
 
@@ -222,7 +224,7 @@ jobs:
 
           CONTENT=$(jq -r '.content' "$FILE")
 
-          curl -f -s \
+          curl -f -sS \
             -X POST \
             -H "Authorization: Bearer $DATABRICKS_TOKEN" \
             -H "Content-Type: application/json" \
