@@ -407,8 +407,7 @@ jobs:
                 "source": "WORKSPACE",
                 "base_parameters": {
                   "storageName": "$STORAGE_NAME",
-                  "catalogo": "$CATALOG",
-                  "credential": "$CREDENTIAL"
+                  "catalogo": "$CATALOG"
                 }
               }
             }
