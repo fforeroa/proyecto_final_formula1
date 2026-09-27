@@ -236,6 +236,8 @@ jobs:
             echo "$response"
 
           done
+
+          
       - name: Crear Catalogo Unity Catalog
           run: |
             export DATABRICKS_HOST="${{ secrets.DATABRICKS_DEST_HOST }}"
