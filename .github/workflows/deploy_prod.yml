@@ -1,58 +1,130 @@
 name: Dynamic Databricks Notebook Deploy
+
 on:
   push:
     branches:
       - main
+
+  workflow_dispatch:
+    inputs:
+      storageName:
+        description: "Nombre del Storage"
+        required: true
+        default: "datalakefforeroprod03"
+
+      catalog:
+        description: "Catalogo"
+        required: true
+        default: "formula1_prod"
+
+      credential:
+        description: "Nombre de la credential"
+        required: true
+        default: "credential_formula1_prod"
+
+
 jobs:
+
   deploy:
+
     runs-on: ubuntu-latest
+
     steps:
+
+    # ============================================================
+    # 1. CHECKOUT DEL REPOSITORIO
+    # ============================================================
+
     - name: Checkout Repository
       uses: actions/checkout@v4
-    
+
+
+    # ============================================================
+    # 2. INSTALAR jq Y curl
+    # ============================================================
+
     - name: Install jq & curl
-      run: sudo apt-get update && sudo apt-get install -y jq curl
-    
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y jq curl
+
+
+    # ============================================================
+    # 3. EXPORTAR NOTEBOOKS DE PREPARACION DE AMBIENTE
+    # ============================================================
+
     - name: Export multiple notebooks preparacion ambiente
       run: |
+
         ORIGIN_HOST=${{ secrets.DATABRICKS_ORIGIN_HOST }}
         ORIGIN_TOKEN=${{ secrets.DATABRICKS_ORIGIN_TOKEN }}
+
         NOTEBOOK_BASE="/Workspace/Users/fcamifox@gmail.com/proyecto_final_formula1/PrepAmb"
-        NOTEBOOKS=("01.Setup Project Environment" "02.Ayuda_Bronze" "03.Configuracion_Ambiente" "04.Ayuda_Silver" "test")
-        
+
+        NOTEBOOKS=(
+          "01.Setup Project Environment"
+          "02.Ayuda_Bronze"
+          "03.Configuracion_Ambiente"
+          "04.Ayuda_Silver"
+          "test"
+        )
+
         mkdir -p notebooks_to_deploy
+
         for nb in "${NOTEBOOKS[@]}"; do
-          echo "Exportando $nb en formato DBC..."
+
+          echo "=========================================="
+          echo "Exportando: $nb"
+          echo "=========================================="
+
           nb_encoded="${nb// /%20}"
-          
-          # Usamos formato DBC para garantizar compatibilidad multi-lenguaje
+
           curl -f -s -X GET \
             -H "Authorization: Bearer $ORIGIN_TOKEN" \
             "$ORIGIN_HOST/api/2.0/workspace/export?path=$NOTEBOOK_BASE/$nb_encoded&format=DBC&direct_download=true" \
             --output "notebooks_to_deploy/$nb.dbc"
+
         done
 
-    - name: Deploy notebooks to Destination Workspace prepracion ambiente
+
+    # ============================================================
+    # 4. IMPORTAR NOTEBOOKS EN DESTINO
+    # ============================================================
+
+    - name: Deploy notebooks to Destination Workspace preparacion ambiente
       run: |
+
         DEST_HOST=${{ secrets.DATABRICKS_DEST_HOST }}
         DEST_TOKEN=${{ secrets.DATABRICKS_DEST_TOKEN }}
+
         DEST_BASE="/Workspace/Users/fcamifox@gmail.com/proyecto_final_formula1/PrepAmb"
-        
-        echo "Creando carpeta base $DEST_BASE si no existe..."
+
+        echo "Creando carpeta base:"
+        echo "$DEST_BASE"
+
         curl -f -s -X POST \
           -H "Authorization: Bearer $DEST_TOKEN" \
           -H "Content-Type: application/json" \
           -d "{\"path\":\"$DEST_BASE\"}" \
           "$DEST_HOST/api/2.0/workspace/mkdirs"
-          
-        # Procesamos la extensión .dbc de forma nativa
+
+
         for file in notebooks_to_deploy/*.dbc; do
+
           [ -e "$file" ] || continue
-          
+
           name=$(basename "$file" .dbc)
+
           dest_path="$DEST_BASE/$name"
-          
-          echo "Importando $file → $dest_path"
+
+          echo "=========================================="
+          echo "Importando:"
+          echo "$file"
+          echo "Destino:"
+          echo "$dest_path"
+          echo "=========================================="
+
+
           response=$(curl -f -s -X POST \
             -H "Authorization: Bearer $DEST_TOKEN" \
             -H "Content-Type: multipart/form-data" \
@@ -61,50 +133,96 @@ jobs:
             -F "overwrite=true" \
             -F "content=@$file" \
             "$DEST_HOST/api/2.0/workspace/import")
-          echo "Response: $response"
+
+
+          echo "Response:"
+          echo "$response"
+
         done
-    
+
+
+    # ============================================================
+    # 5. EXPORTAR NOTEBOOKS BRONZE
+    # ============================================================
+
     - name: Export multiple notebooks bronze
       run: |
+
         ORIGIN_HOST=${{ secrets.DATABRICKS_ORIGIN_HOST }}
         ORIGIN_TOKEN=${{ secrets.DATABRICKS_ORIGIN_TOKEN }}
+
         NOTEBOOK_BASE="/Workspace/Users/fcamifox@gmail.com/proyecto_final_formula1/proceso/01-Bronze"
-        NOTEBOOKS=("01.Ingest Circuits File" "02.Ingest Races File" "03.Ingest Constructors File" "04.Ingest Drivers File" "05.Ingest Results File" "06.Ingest Sprints File")
-        
+
+        NOTEBOOKS=(
+          "01.Ingest Circuits File"
+          "02.Ingest Races File"
+          "03.Ingest Constructors File"
+          "04.Ingest Drivers File"
+          "05.Ingest Results File"
+          "06.Ingest Sprints File"
+        )
+
         rm -rf notebooks_to_deploy
+
         mkdir -p notebooks_to_deploy
-        
+
+
         for nb in "${NOTEBOOKS[@]}"; do
-          echo "Exportando $nb en formato DBC..."
+
+          echo "=========================================="
+          echo "Exportando: $nb"
+          echo "=========================================="
+
           nb_encoded="${nb// /%20}"
-          
+
           curl -f -s -X GET \
             -H "Authorization: Bearer $ORIGIN_TOKEN" \
             "$ORIGIN_HOST/api/2.0/workspace/export?path=$NOTEBOOK_BASE/$nb_encoded&format=DBC&direct_download=true" \
             --output "notebooks_to_deploy/$nb.dbc"
+
         done
-    
+
+
+    # ============================================================
+    # 6. IMPORTAR NOTEBOOKS BRONZE EN DESTINO
+    # ============================================================
+
     - name: Deploy notebooks to Destination Workspace bronze
       run: |
+
         DEST_HOST=${{ secrets.DATABRICKS_DEST_HOST }}
         DEST_TOKEN=${{ secrets.DATABRICKS_DEST_TOKEN }}
+
         DEST_BASE="/Workspace/Users/fcamifox@gmail.com/proyecto_final_formula1/proceso/01-Bronze"
-        
-        echo "Creando carpeta base $DEST_BASE si no existe..."
+
+        echo "Creando carpeta base:"
+        echo "$DEST_BASE"
+
+
         curl -f -s -X POST \
           -H "Authorization: Bearer $DEST_TOKEN" \
           -H "Content-Type: application/json" \
           -d "{\"path\":\"$DEST_BASE\"}" \
           "$DEST_HOST/api/2.0/workspace/mkdirs"
-          
-        # Procesamos la extensión .dbc de forma nativa
+
+
         for file in notebooks_to_deploy/*.dbc; do
+
           [ -e "$file" ] || continue
-          
+
           name=$(basename "$file" .dbc)
+
           dest_path="$DEST_BASE/$name"
-          
-          echo "Importando $file → $dest_path"
+
+
+          echo "=========================================="
+          echo "Importando:"
+          echo "$file"
+          echo "Destino:"
+          echo "$dest_path"
+          echo "=========================================="
+
+
           response=$(curl -f -s -X POST \
             -H "Authorization: Bearer $DEST_TOKEN" \
             -H "Content-Type: multipart/form-data" \
@@ -113,32 +231,84 @@ jobs:
             -F "overwrite=true" \
             -F "content=@$file" \
             "$DEST_HOST/api/2.0/workspace/import")
-          echo "Response: $response"
+
+
+          echo "Response:"
+          echo "$response"
+
         done
+
+
+    # ============================================================
+    # 7. EJECUTAR NOTEBOOK CON PARAMETROS
+    # ============================================================
 
     - name: Ejecutar Cuaderno Directamente de setup
       run: |
-        # 1. Configurar variables de acceso
+
+        # --------------------------------------------------------
+        # Credenciales de acceso al Workspace DESTINO
+        # --------------------------------------------------------
+
         export DATABRICKS_HOST="${{ secrets.DATABRICKS_DEST_HOST }}"
         export DATABRICKS_TOKEN="${{ secrets.DATABRICKS_DEST_TOKEN }}"
-        
-        # 2. Definir parámetros de entorno
-        PROD_STORAGE="datalakefforeroprod03" 
-        CATALOG="formula1_prod"
-        CREDENTIAL="credential_formula1_prod"
-        NOTEBOOK_PATH="/Workspace/Users/fcamifox@gmail.com/proyecto_final_formula1/PrepAmb/test"
-        
-        # 3. Payload JSON para ejecución efímera (runs/submit)
-        # Al no declarar ningún clúster, Databricks asume Serverless de forma automática.
+
+
+        # --------------------------------------------------------
+        # PARAMETROS
+        #
+        # Si se ejecuta manualmente:
+        # toma los valores de workflow_dispatch.
+        #
+        # Si se ejecuta mediante push:
+        # utiliza los valores PROD definidos por defecto.
+        # --------------------------------------------------------
+
+        PROD_STORAGE="${{ github.event.inputs.storageName || 'datalakefforeroprod03' }}"
+
+        CATALOG="${{ github.event.inputs.catalog || 'formula1_prod' }}"
+
+        CREDENTIAL="${{ github.event.inputs.credential || 'credential_formula1_prod' }}"
+
+
+        # --------------------------------------------------------
+        # NOTEBOOK QUE SE VA A EJECUTAR
+        # --------------------------------------------------------
+
+        NOTEBOOK_PATH="/Workspace/Users/fcamifox@gmail.com/proyecto_final_formula1/PrepAmb/01.Setup Project Environment"
+
+
+        # --------------------------------------------------------
+        # MOSTRAR CONFIGURACION
+        # --------------------------------------------------------
+
+        echo "=========================================="
+        echo "CONFIGURACION DE EJECUCION"
+        echo "=========================================="
+
+        echo "StorageName : $PROD_STORAGE"
+        echo "Catalog     : $CATALOG"
+        echo "Credential  : $CREDENTIAL"
+        echo "Notebook    : $NOTEBOOK_PATH"
+
+        echo "=========================================="
+
+
+        # --------------------------------------------------------
+        # CREAR JSON DE EJECUCION
+        # --------------------------------------------------------
+
         cat <<EOF > run_config.json
         {
-          "run_name": "Ejecucion Efimera Serverless desde GitHub Actions",
+          "run_name": "Ejecucion Formula1 Serverless",
           "tasks": [
             {
               "task_key": "ejecucion_unica_notebook",
+
               "notebook_task": {
                 "notebook_path": "$NOTEBOOK_PATH",
                 "source": "WORKSPACE",
+
                 "base_parameters": {
                   "storageName": "$PROD_STORAGE",
                   "catalog": "$CATALOG",
@@ -150,19 +320,63 @@ jobs:
         }
         EOF
 
-        # 4. Enviar la petición HTTP POST a la API de Databricks
-        echo "Disparando ejecución efímera Serverless para: $NOTEBOOK_PATH..."
-        
+
+        # --------------------------------------------------------
+        # MOSTRAR JSON
+        # --------------------------------------------------------
+
+        echo "=========================================="
+        echo "RUN CONFIG"
+        echo "=========================================="
+
+        cat run_config.json
+
+        echo "=========================================="
+
+
+        # --------------------------------------------------------
+        # EJECUTAR NOTEBOOK
+        # --------------------------------------------------------
+
+        echo "Disparando ejecucion de Databricks..."
+
+
         RESPONSE=$(curl -f -s -X POST \
           -H "Authorization: Bearer $DATABRICKS_TOKEN" \
           -H "Content-Type: application/json" \
           -d @run_config.json \
           "$DATABRICKS_HOST/api/2.1/jobs/runs/submit")
-          
-        echo "Petición aceptada por Databricks."
-        echo "Respuesta del Servidor: $RESPONSE"
-        
-        # 5. Extraer el run_id generado para el monitoreo
-        RUN_ID=$(echo "$RESPONSE" | jq -r '.run_id')
-        echo "El notebook se está ejecutando en segundo plano bajo el Run ID: $RUN_ID"
 
+
+        # --------------------------------------------------------
+        # MOSTRAR RESPUESTA
+        # --------------------------------------------------------
+
+        echo "=========================================="
+        echo "RESPUESTA DE DATABRICKS"
+        echo "=========================================="
+
+        echo "$RESPONSE"
+
+
+        # --------------------------------------------------------
+        # EXTRAER RUN ID
+        # --------------------------------------------------------
+
+        RUN_ID=$(echo "$RESPONSE" | jq -r '.run_id')
+
+
+        echo "=========================================="
+
+        if [ "$RUN_ID" = "null" ] || [ -z "$RUN_ID" ]; then
+
+          echo "ERROR: No se pudo obtener RUN_ID"
+          exit 1
+
+        fi
+
+
+        echo "Notebook ejecutado."
+        echo "RUN_ID: $RUN_ID"
+
+        echo "=========================================="
