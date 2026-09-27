@@ -1,366 +1,102 @@
-name: Dynamic Databricks Notebook Deploy
-
-on:
-  push:
-    branches:
-      - main
-
-  workflow_dispatch:
-    inputs:
-      storageName:
-        description: "Nombre del Storage"
-        required: true
-        default: "datalakefforeroprod03"
-
-      catalog:
-        description: "Catalogo"
-        required: true
-        default: "formula1_prod"
-
-      credential:
-        description: "Nombre de la credential"
-        required: true
-        default: "credential_formula1_prod"
-
-jobs:
-
-  deploy:
-
-    runs-on: ubuntu-latest
-
-    steps:
-
-      # ============================================================
-      # 1. CHECKOUT DEL REPOSITORIO
-      # ============================================================
-
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-
-
-      # ============================================================
-      # 2. INSTALAR jq Y curl
-      # ============================================================
-
-      - name: Install jq & curl
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y jq curl
-
-
-      # ============================================================
-      # 3. EXPORTAR NOTEBOOKS DE PREPARACION DE AMBIENTE
-      # ============================================================
-
-      - name: Export multiple notebooks preparacion ambiente
-        run: |
-
-          ORIGIN_HOST=${{ secrets.DATABRICKS_ORIGIN_HOST }}
-          ORIGIN_TOKEN=${{ secrets.DATABRICKS_ORIGIN_TOKEN }}
-
-          NOTEBOOK_BASE="/Workspace/Users/fcamifox@gmail.com/proyecto_final_formula1/PrepAmb"
-
-          NOTEBOOKS=(
-            "01.Setup Project Environment"
-            "02.Ayuda_Bronze"
-            "03.Configuracion_Ambiente"
-            "04.Ayuda_Silver"
-            "test"
-          )
-
-          mkdir -p notebooks_to_deploy
-
-          for nb in "${NOTEBOOKS[@]}"; do
-
-            echo "=========================================="
-            echo "Exportando: $nb"
-            echo "=========================================="
-
-            nb_encoded="${nb// /%20}"
-
-            curl -f -s -X GET \
-              -H "Authorization: Bearer $ORIGIN_TOKEN" \
-              "$ORIGIN_HOST/api/2.0/workspace/export?path=$NOTEBOOK_BASE/$nb_encoded&format=DBC&direct_download=true" \
-              --output "notebooks_to_deploy/$nb.dbc"
-
-          done
-
-
-      # ============================================================
-      # 4. IMPORTAR NOTEBOOKS EN DESTINO
-      # ============================================================
-
-      - name: Deploy notebooks to Destination Workspace preparacion ambiente
-        run: |
-
-          DEST_HOST=${{ secrets.DATABRICKS_DEST_HOST }}
-          DEST_TOKEN=${{ secrets.DATABRICKS_DEST_TOKEN }}
-
-          DEST_BASE="/Workspace/Users/fcamifox@gmail.com/proyecto_final_formula1/PrepAmb"
-
-          echo "Creando carpeta base:"
-          echo "$DEST_BASE"
-
-          curl -f -s -X POST \
-            -H "Authorization: Bearer $DEST_TOKEN" \
-            -H "Content-Type: application/json" \
-            -d "{\"path\":\"$DEST_BASE\"}" \
-            "$DEST_HOST/api/2.0/workspace/mkdirs"
-
-
-          for file in notebooks_to_deploy/*.dbc; do
-
-            [ -e "$file" ] || continue
-
-            name=$(basename "$file" .dbc)
-
-            dest_path="$DEST_BASE/$name"
-
-            echo "=========================================="
-            echo "Importando:"
-            echo "$file"
-            echo "Destino:"
-            echo "$dest_path"
-            echo "=========================================="
-
-
-            response=$(curl -f -s -X POST \
-              -H "Authorization: Bearer $DEST_TOKEN" \
-              -H "Content-Type: multipart/form-data" \
-              -F "path=$dest_path" \
-              -F "format=DBC" \
-              -F "overwrite=true" \
-              -F "content=@$file" \
-              "$DEST_HOST/api/2.0/workspace/import")
-
-
-            echo "Response:"
-            echo "$response"
-
-          done
-
-
-      # ============================================================
-      # 5. EXPORTAR NOTEBOOKS BRONZE
-      # ============================================================
-
-      - name: Export multiple notebooks bronze
-        run: |
-
-          ORIGIN_HOST=${{ secrets.DATABRICKS_ORIGIN_HOST }}
-          ORIGIN_TOKEN=${{ secrets.DATABRICKS_ORIGIN_TOKEN }}
-
-          NOTEBOOK_BASE="/Workspace/Users/fcamifox@gmail.com/proyecto_final_formula1/proceso/01-Bronze"
-
-          NOTEBOOKS=(
-            "01.Ingest Circuits File"
-            "02.Ingest Races File"
-            "03.Ingest Constructors File"
-            "04.Ingest Drivers File"
-            "05.Ingest Results File"
-            "06.Ingest Sprints File"
-          )
-
-          rm -rf notebooks_to_deploy
-
-          mkdir -p notebooks_to_deploy
-
-
-          for nb in "${NOTEBOOKS[@]}"; do
-
-            echo "=========================================="
-            echo "Exportando: $nb"
-            echo "=========================================="
-
-            nb_encoded="${nb// /%20}"
-
-            curl -f -s -X GET \
-              -H "Authorization: Bearer $ORIGIN_TOKEN" \
-              "$ORIGIN_HOST/api/2.0/workspace/export?path=$NOTEBOOK_BASE/$nb_encoded&format=DBC&direct_download=true" \
-              --output "notebooks_to_deploy/$nb.dbc"
-
-          done
-
-
-      # ============================================================
-      # 6. IMPORTAR NOTEBOOKS BRONZE EN DESTINO
-      # ============================================================
-
-      - name: Deploy notebooks to Destination Workspace bronze
-        run: |
-
-          DEST_HOST=${{ secrets.DATABRICKS_DEST_HOST }}
-          DEST_TOKEN=${{ secrets.DATABRICKS_DEST_TOKEN }}
-
-          DEST_BASE="/Workspace/Users/fcamifox@gmail.com/proyecto_final_formula1/proceso/01-Bronze"
-
-          echo "Creando carpeta base:"
-          echo "$DEST_BASE"
-
-
-          curl -f -s -X POST \
-            -H "Authorization: Bearer $DEST_TOKEN" \
-            -H "Content-Type: application/json" \
-            -d "{\"path\":\"$DEST_BASE\"}" \
-            "$DEST_HOST/api/2.0/workspace/mkdirs"
-
-
-          for file in notebooks_to_deploy/*.dbc; do
-
-            [ -e "$file" ] || continue
-
-            name=$(basename "$file" .dbc)
-
-            dest_path="$DEST_BASE/$name"
-
-
-            echo "=========================================="
-            echo "Importando:"
-            echo "$file"
-            echo "Destino:"
-            echo "$dest_path"
-            echo "=========================================="
-
-
-            response=$(curl -f -s -X POST \
-              -H "Authorization: Bearer $DEST_TOKEN" \
-              -H "Content-Type: multipart/form-data" \
-              -F "path=$dest_path" \
-              -F "format=DBC" \
-              -F "overwrite=true" \
-              -F "content=@$file" \
-              "$DEST_HOST/api/2.0/workspace/import")
-
-
-            echo "Response:"
-            echo "$response"
-
-          done
-
-
-      # ============================================================
-      # 7. EJECUTAR NOTEBOOK CON PARAMETROS
-      # ============================================================
-
-      - name: Ejecutar Setup Project Environment
-        run: |
-
-          export DATABRICKS_HOST="${{ secrets.DATABRICKS_DEST_HOST }}"
-          export DATABRICKS_TOKEN="${{ secrets.DATABRICKS_DEST_TOKEN }}"
-
-
-          # --------------------------------------------------------
-          # PARAMETROS DEL AMBIENTE
-          # --------------------------------------------------------
-
-          STORAGE_NAME="datalakefforeroprod03"
-          CATALOG="formula1_prod"
-          CREDENTIAL="credential_formula1_prod"
-
-
-          # --------------------------------------------------------
-          # NOTEBOOK A EJECUTAR
-          # --------------------------------------------------------
-
-          NOTEBOOK_PATH="/Workspace/Users/fcamifox@gmail.com/proyecto_final_formula1/PrepAmb/01.Setup Project Environment"
-
-
-          # --------------------------------------------------------
-          # MOSTRAR CONFIGURACION
-          # --------------------------------------------------------
-
-          echo "=========================================="
-          echo "EJECUTANDO NOTEBOOK"
-          echo "=========================================="
-
-          echo "Notebook   : $NOTEBOOK_PATH"
-          echo "Storage    : $STORAGE_NAME"
-          echo "Catalog    : $CATALOG"
-          echo "Credential : $CREDENTIAL"
-
-          echo "=========================================="
-
-
-          # --------------------------------------------------------
-          # CREAR CONFIGURACION JSON
-          # --------------------------------------------------------
-
-          cat <<EOF > run_config.json
-          {
-            "run_name": "Formula1 - Setup Project Environment",
-            "tasks": [
-              {
-                "task_key": "setup_project_environment",
-                "notebook_task": {
-                  "notebook_path": "$NOTEBOOK_PATH",
-                  "source": "WORKSPACE",
-                  "base_parameters": {
-                    "storageName": "$STORAGE_NAME",
-                    "credential": "$CREDENTIAL",
-                    "catalog": "$CATALOG"
-                  }
-                }
-              }
-            ]
+- name: Ejecutar Setup Environment en Serverless
+  run: |
+    export DATABRICKS_HOST="${{ secrets.DATABRICKS_DEST_HOST }}"
+    export DATABRICKS_TOKEN="${{ secrets.DATABRICKS_DEST_TOKEN }}"
+
+    STORAGE_NAME="datalakefforeroprod03"
+    CATALOG="formula1_prod"
+    CREDENTIAL="credential_formula1_prod"
+
+    NOTEBOOK_PATH="/Workspace/Users/fcamifox@gmail.com/proyecto_final_formula1/PrepAmb/01.Setup Project Environment"
+
+    cat <<EOF > run_config.json
+    {
+      "run_name": "Setup Formula1 Environment",
+      "tasks": [
+        {
+          "task_key": "setup_environment",
+          "notebook_task": {
+            "notebook_path": "$NOTEBOOK_PATH",
+            "source": "WORKSPACE",
+            "base_parameters": {
+              "storageName": "$STORAGE_NAME",
+              "catalog": "$CATALOG",
+              "credential": "$CREDENTIAL"
+            }
           }
-          EOF
+        }
+      ]
+    }
+    EOF
 
+    echo "======================================"
+    echo "Ejecutando notebook:"
+    echo "$NOTEBOOK_PATH"
+    echo "======================================"
+    echo "Storage : $STORAGE_NAME"
+    echo "Catalog : $CATALOG"
+    echo "Credential : $CREDENTIAL"
+    echo "======================================"
 
-          # --------------------------------------------------------
-          # MOSTRAR CONFIGURACION
-          # --------------------------------------------------------
+    RESPONSE=$(curl -f -s -X POST \
+      -H "Authorization: Bearer $DATABRICKS_TOKEN" \
+      -H "Content-Type: application/json" \
+      -d @run_config.json \
+      "$DATABRICKS_HOST/api/2.1/jobs/runs/submit")
 
-          echo "=========================================="
-          echo "RUN CONFIG"
-          echo "=========================================="
+    echo "Respuesta inicial:"
+    echo "$RESPONSE"
 
-          cat run_config.json
+    RUN_ID=$(echo "$RESPONSE" | jq -r '.run_id')
 
-          echo "=========================================="
+    if [ "$RUN_ID" = "null" ] || [ -z "$RUN_ID" ]; then
+      echo "ERROR: Databricks no devolvió RUN_ID"
+      exit 1
+    fi
 
+    echo "RUN_ID=$RUN_ID"
 
-          # --------------------------------------------------------
-          # EJECUTAR EN SERVERLESS
-          # --------------------------------------------------------
+    echo "Esperando ejecución del notebook..."
 
-          echo "EJECUTANDO EN SERVERLESS..."
+    while true; do
 
+      RUN_RESPONSE=$(curl -s \
+        -H "Authorization: Bearer $DATABRICKS_TOKEN" \
+        "$DATABRICKS_HOST/api/2.1/jobs/runs/get?run_id=$RUN_ID")
 
-          RESPONSE=$(curl -f -s -X POST \
-            -H "Authorization: Bearer $DATABRICKS_TOKEN" \
-            -H "Content-Type: application/json" \
-            -d @run_config.json \
-            "$DATABRICKS_HOST/api/2.1/jobs/runs/submit")
+      LIFE_CYCLE=$(echo "$RUN_RESPONSE" | jq -r '.state.life_cycle_state')
+      RESULT_STATE=$(echo "$RUN_RESPONSE" | jq -r '.state.result_state')
+      STATE_MESSAGE=$(echo "$RUN_RESPONSE" | jq -r '.state.state_message')
 
+      echo "Estado: $LIFE_CYCLE | Resultado: $RESULT_STATE"
 
-          # --------------------------------------------------------
-          # RESPUESTA DE DATABRICKS
-          # --------------------------------------------------------
+      if [ "$LIFE_CYCLE" = "TERMINATED" ]; then
 
-          echo "=========================================="
-          echo "RESPUESTA DATABRICKS"
-          echo "=========================================="
+        if [ "$RESULT_STATE" = "SUCCESS" ]; then
+          echo "======================================"
+          echo "SETUP EJECUTADO CORRECTAMENTE"
+          echo "======================================"
+          exit 0
+        else
+          echo "======================================"
+          echo "ERROR EN EL NOTEBOOK"
+          echo "======================================"
+          echo "Resultado: $RESULT_STATE"
+          echo "Mensaje: $STATE_MESSAGE"
+          echo ""
+          echo "Respuesta completa:"
+          echo "$RUN_RESPONSE"
+          exit 1
+        fi
+      fi
 
-          echo "$RESPONSE"
+      if [ "$LIFE_CYCLE" = "INTERNAL_ERROR" ] || [ "$LIFE_CYCLE" = "SKIPPED" ]; then
+        echo "======================================"
+        echo "ERROR EN LA EJECUCION"
+        echo "======================================"
+        echo "$RUN_RESPONSE"
+        exit 1
+      fi
 
-
-          # --------------------------------------------------------
-          # OBTENER RUN ID
-          # --------------------------------------------------------
-
-          RUN_ID=$(echo "$RESPONSE" | jq -r '.run_id')
-
-
-          if [ "$RUN_ID" = "null" ] || [ -z "$RUN_ID" ]; then
-
-            echo "ERROR: No se obtuvo RUN_ID"
-
-            exit 1
-
-          fi
-
-
-          echo "=========================================="
-          echo "EJECUCION ENVIADA CORRECTAMENTE"
-          echo "RUN_ID: $RUN_ID"
-          echo "=========================================="
+      sleep 10
+    done
