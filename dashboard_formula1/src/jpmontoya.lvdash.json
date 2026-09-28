@@ -1,9 +1,8 @@
 {
   "datasets": [
     {
-      "catalog": "formula1",
-      "displayName": "Montoya",
       "name": "bf72d966",
+      "displayName": "Montoya",
       "queryLines": [
         "select \r\n",
         "a.estado,\r\n",
@@ -29,20 +28,16 @@
         "join gold.dim_constructor e on a.id_constructor=e.id_constructor\r\n",
         "where b.nombre_piloto='Juan Pablo Montoya'\r\n"
       ],
+      "catalog": "formula1",
       "schema": "default"
     }
   ],
   "pages": [
     {
+      "name": "b97f84bc",
       "displayName": "Pagina 1",
       "layout": [
         {
-          "position": {
-            "height": 6,
-            "width": 6,
-            "x": 6,
-            "y": 11
-          },
           "widget": {
             "name": "47aaa84f",
             "queries": [
@@ -50,17 +45,17 @@
                 "name": "main_query",
                 "query": {
                   "datasetName": "bf72d966",
-                  "disaggregated": false,
                   "fields": [
                     {
-                      "expression": "`temporada`",
-                      "name": "temporada"
+                      "name": "temporada",
+                      "expression": "`temporada`"
                     },
                     {
-                      "expression": "SUM(`is_win`)",
-                      "name": "sum(is_win)"
+                      "name": "sum(is_win)",
+                      "expression": "SUM(`is_win`)"
                     }
-                  ]
+                  ],
+                  "disaggregated": false
                 }
               }
             ],
@@ -85,15 +80,15 @@
               "version": 3,
               "widgetType": "bar"
             }
+          },
+          "position": {
+            "x": 6,
+            "y": 11,
+            "width": 6,
+            "height": 6
           }
         },
         {
-          "position": {
-            "height": 6,
-            "width": 6,
-            "x": 0,
-            "y": 11
-          },
           "widget": {
             "name": "0f17c6ed",
             "queries": [
@@ -101,17 +96,17 @@
                 "name": "main_query",
                 "query": {
                   "datasetName": "bf72d966",
-                  "disaggregated": false,
                   "fields": [
                     {
-                      "expression": "`temporada`",
-                      "name": "temporada"
+                      "name": "temporada",
+                      "expression": "`temporada`"
                     },
                     {
-                      "expression": "SUM(`is_podium`)",
-                      "name": "sum(is_podium)"
+                      "name": "sum(is_podium)",
+                      "expression": "SUM(`is_podium`)"
                     }
-                  ]
+                  ],
+                  "disaggregated": false
                 }
               }
             ],
@@ -139,15 +134,15 @@
               "version": 3,
               "widgetType": "bar"
             }
+          },
+          "position": {
+            "x": 0,
+            "y": 11,
+            "width": 6,
+            "height": 6
           }
         },
         {
-          "position": {
-            "height": 2,
-            "width": 4,
-            "x": 0,
-            "y": 3
-          },
           "widget": {
             "name": "aa9bf846",
             "queries": [
@@ -155,13 +150,13 @@
                 "name": "main_query",
                 "query": {
                   "datasetName": "bf72d966",
-                  "disaggregated": false,
                   "fields": [
                     {
-                      "expression": "COUNT(DISTINCT `temporada`)",
-                      "name": "countdistinct(temporada)"
+                      "name": "countdistinct(temporada)",
+                      "expression": "COUNT(DISTINCT `temporada`)"
                     }
-                  ]
+                  ],
+                  "disaggregated": false
                 }
               }
             ],
@@ -184,15 +179,15 @@
               "version": 2,
               "widgetType": "counter"
             }
+          },
+          "position": {
+            "x": 0,
+            "y": 3,
+            "width": 4,
+            "height": 2
           }
         },
         {
-          "position": {
-            "height": 2,
-            "width": 3,
-            "x": 4,
-            "y": 3
-          },
           "widget": {
             "name": "victorias",
             "queries": [
@@ -200,13 +195,13 @@
                 "name": "main_query",
                 "query": {
                   "datasetName": "bf72d966",
-                  "disaggregated": false,
                   "fields": [
                     {
-                      "expression": "SUM(`is_win`)",
-                      "name": "sum(is_win)"
+                      "name": "sum(is_win)",
+                      "expression": "SUM(`is_win`)"
                     }
-                  ]
+                  ],
+                  "disaggregated": false
                 }
               }
             ],
@@ -229,15 +224,15 @@
               "version": 2,
               "widgetType": "counter"
             }
+          },
+          "position": {
+            "x": 4,
+            "y": 3,
+            "width": 3,
+            "height": 2
           }
         },
         {
-          "position": {
-            "height": 2,
-            "width": 5,
-            "x": 7,
-            "y": 3
-          },
           "widget": {
             "name": "podiums",
             "queries": [
@@ -245,13 +240,13 @@
                 "name": "main_query",
                 "query": {
                   "datasetName": "bf72d966",
-                  "disaggregated": false,
                   "fields": [
                     {
-                      "expression": "SUM(`is_podium`)",
-                      "name": "sum(is_podium)"
+                      "name": "sum(is_podium)",
+                      "expression": "SUM(`is_podium`)"
                     }
-                  ]
+                  ],
+                  "disaggregated": false
                 }
               }
             ],
@@ -274,15 +269,15 @@
               "version": 2,
               "widgetType": "counter"
             }
+          },
+          "position": {
+            "x": 7,
+            "y": 3,
+            "width": 5,
+            "height": 2
           }
         },
         {
-          "position": {
-            "height": 6,
-            "width": 12,
-            "x": 0,
-            "y": 17
-          },
           "widget": {
             "name": "00ed288a",
             "queries": [
@@ -290,17 +285,17 @@
                 "name": "main_query",
                 "query": {
                   "datasetName": "bf72d966",
-                  "disaggregated": false,
                   "fields": [
                     {
-                      "expression": "COUNT(DISTINCT `posicion_final_texto`)",
-                      "name": "countdistinct(posicion_final_texto)"
+                      "name": "countdistinct(posicion_final_texto)",
+                      "expression": "COUNT(DISTINCT `posicion_final_texto`)"
                     },
                     {
-                      "expression": "`carreras_finalizadas`",
-                      "name": "carreras_finalizadas"
+                      "name": "carreras_finalizadas",
+                      "expression": "`carreras_finalizadas`"
                     }
-                  ]
+                  ],
+                  "disaggregated": false
                 }
               }
             ],
@@ -328,31 +323,31 @@
               "version": 3,
               "widgetType": "pie"
             }
+          },
+          "position": {
+            "x": 0,
+            "y": 17,
+            "width": 12,
+            "height": 6
           }
         },
         {
-          "position": {
-            "height": 2,
-            "width": 12,
-            "x": 0,
-            "y": 0
-          },
           "widget": {
+            "name": "9eb367ed",
             "multilineTextboxSpec": {
               "lines": [
                 "<span style=\"font-size: 36px;line-height: 1.5;\">Juan Pablo Montoya - Datos relevantes</span>"
               ]
-            },
-            "name": "9eb367ed"
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 12,
+            "height": 2
           }
         },
         {
-          "position": {
-            "height": 6,
-            "width": 12,
-            "x": 0,
-            "y": 5
-          },
           "widget": {
             "name": "41394dbc",
             "queries": [
@@ -360,17 +355,17 @@
                 "name": "main_query",
                 "query": {
                   "datasetName": "bf72d966",
-                  "disaggregated": false,
                   "fields": [
                     {
-                      "expression": "`temporada`",
-                      "name": "temporada"
+                      "name": "temporada",
+                      "expression": "`temporada`"
                     },
                     {
-                      "expression": "SUM(`puntos`)",
-                      "name": "sum(puntos)"
+                      "name": "sum(puntos)",
+                      "expression": "SUM(`puntos`)"
                     }
-                  ]
+                  ],
+                  "disaggregated": false
                 }
               }
             ],
@@ -395,15 +390,15 @@
               "version": 3,
               "widgetType": "bar"
             }
+          },
+          "position": {
+            "x": 0,
+            "y": 5,
+            "width": 12,
+            "height": 6
           }
         },
         {
-          "position": {
-            "height": 1,
-            "width": 4,
-            "x": 0,
-            "y": 2
-          },
           "widget": {
             "name": "escuderia",
             "queries": [
@@ -411,17 +406,17 @@
                 "name": "dashboards/01f1bb661cf312bfac8d81816ff54831/datasets/01f1bb6f588411258684036b16153f9c_nombre_constrcutor",
                 "query": {
                   "datasetName": "bf72d966",
-                  "disaggregated": false,
                   "fields": [
                     {
-                      "expression": "`nombre_constrcutor`",
-                      "name": "nombre_constrcutor"
+                      "name": "nombre_constrcutor",
+                      "expression": "`nombre_constrcutor`"
                     },
                     {
-                      "expression": "COUNT_IF(`associative_filter_predicate_group`)",
-                      "name": "nombre_constrcutor_associativity"
+                      "name": "nombre_constrcutor_associativity",
+                      "expression": "COUNT_IF(`associative_filter_predicate_group`)"
                     }
-                  ]
+                  ],
+                  "disaggregated": false
                 }
               }
             ],
@@ -444,18 +439,23 @@
               "version": 2,
               "widgetType": "filter-single-select"
             }
+          },
+          "position": {
+            "x": 0,
+            "y": 2,
+            "width": 4,
+            "height": 1
           }
         }
       ],
-      "layoutVersion": "GRID_V1",
-      "name": "b97f84bc",
-      "pageType": "PAGE_TYPE_CANVAS"
+      "pageType": "PAGE_TYPE_CANVAS",
+      "layoutVersion": "GRID_V1"
     }
   ],
   "uiSettings": {
-    "applyModeEnabled": false,
     "theme": {
       "widgetHeaderAlignment": "ALIGNMENT_UNSPECIFIED"
-    }
+    },
+    "applyModeEnabled": false
   }
 }
