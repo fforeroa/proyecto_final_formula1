@@ -839,28 +839,6 @@ jobs:
               },
 
               "environment_key": "Default"
-            },
-
-            {
-              "task_key": 05_Transform_Results_Data",
-
-              "depends_on": [
-                {
-                  "task_key": "05_Ingest_Results-File"
-                }
-              ],
-
-              "notebook_task": {
-                "notebook_path": "/Workspace/Users/fcamifox@gmail.com/proyecto_final_formula1/proceso/02-Silver/05.Ingest Results File",
-                "source": "WORKSPACE",
-
-                "base_parameters": {
-                  "storageName": "$STORAGE_NAME",
-                  "catalogo": "$CATALOG"
-                }
-              },
-
-              "environment_key": "Default"
             }
 
 
