@@ -438,3 +438,144 @@ jobs:
           echo "OK: $NOTEBOOK"
 
         done
+
+    # ============================================================
+    # 8. CREAR EXTERNAL LOCATION METASTORE
+    # ============================================================
+
+    - name: Crear External Location exlt-metastore
+      env:
+        DATABRICKS_HOST: ${{ secrets.DATABRICKS_DEST_HOST }}
+        DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_DEST_TOKEN }}
+
+      run: |
+
+        RESPONSE=$(curl -s \
+          -w "\n%{http_code}" \
+          -X POST \
+          -H "Authorization: Bearer $DATABRICKS_TOKEN" \
+          -H "Content-Type: application/json" \
+          -d "{
+            \"name\": \"exlt-metastore_prod\",
+            \"url\": \"abfss://metastore@${STORAGE_NAME}.dfs.core.windows.net/\",
+            \"credential_name\": \"${CREDENTIAL}\",
+            \"comment\": \"External Location Metastore Formula1\"
+          }" \
+          "$DATABRICKS_HOST/api/2.1/unity-catalog/external-locations")
+
+        echo "$RESPONSE"
+
+
+    # ============================================================
+    # 9. CREAR EXTERNAL LOCATIONS
+    # ============================================================
+
+    - name: Crear External Locations PROD
+      env:
+        DATABRICKS_HOST: ${{ secrets.DATABRICKS_DEST_HOST }}
+        DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_DEST_TOKEN }}
+
+      run: |
+
+        create_external_location() {
+
+          LOCATION_NAME="$1"
+          CONTAINER="$2"
+
+          echo ""
+          echo "========================================"
+          echo "Creando External Location: $LOCATION_NAME"
+          echo "========================================"
+
+          RESPONSE=$(curl -s \
+            -w "\n%{http_code}" \
+            -X POST \
+            -H "Authorization: Bearer $DATABRICKS_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"name\": \"$LOCATION_NAME\",
+              \"url\": \"abfss://${CONTAINER}@${STORAGE_NAME}.dfs.core.windows.net/\",
+              \"credential_name\": \"${CREDENTIAL}\",
+              \"comment\": \"External Location Formula1 PROD\"
+            }" \
+            "$DATABRICKS_HOST/api/2.1/unity-catalog/external-locations")
+
+          echo "$RESPONSE"
+
+        }
+
+        create_external_location "exlt-raw_prod" "raw"
+        create_external_location "exlt-bronze_prod" "bronze"
+        create_external_location "exlt-silver_prod" "silver"
+        create_external_location "exlt-golden_prod" "golden"
+
+
+    # ============================================================
+    # 10. CREAR CATALOGO
+    # ============================================================
+
+    - name: Crear Catalogo Unity Catalog
+      env:
+        DATABRICKS_HOST: ${{ secrets.DATABRICKS_DEST_HOST }}
+        DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_DEST_TOKEN }}
+
+      run: |
+
+        echo "Creando catalogo: $CATALOG"
+
+        RESPONSE=$(curl -s \
+          -w "\n%{http_code}" \
+          -X POST \
+          -H "Authorization: Bearer $DATABRICKS_TOKEN" \
+          -H "Content-Type: application/json" \
+          -d "{
+            \"name\": \"$CATALOG\",
+            \"storage_root\": \"abfss://metastore@${STORAGE_NAME}.dfs.core.windows.net/\",
+            \"comment\": \"Catalogo para la arquitectura medallion del proyecto Formula1 PROD\"
+          }" \
+          "$DATABRICKS_HOST/api/2.1/unity-catalog/catalogs")
+
+        echo "$RESPONSE"
+
+
+    # ============================================================
+    # 11. CREAR SCHEMAS
+    # ============================================================
+
+    - name: Crear Schemas Bronze Silver Gold
+      env:
+        DATABRICKS_HOST: ${{ secrets.DATABRICKS_DEST_HOST }}
+        DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_DEST_TOKEN }}
+
+      run: |
+
+        create_schema() {
+
+          SCHEMA="$1"
+          CONTAINER="$2"
+
+          echo ""
+          echo "========================================"
+          echo "Creando schema: $CATALOG.$SCHEMA"
+          echo "========================================"
+
+          RESPONSE=$(curl -s \
+            -w "\n%{http_code}" \
+            -X POST \
+            -H "Authorization: Bearer $DATABRICKS_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"name\": \"$SCHEMA\",
+              \"catalog_name\": \"$CATALOG\",
+              \"storage_root\": \"abfss://${CONTAINER}@${STORAGE_NAME}.dfs.core.windows.net/${SCHEMA}\",
+              \"comment\": \"Schema $SCHEMA del proyecto Formula1 PROD\"
+            }" \
+            "$DATABRICKS_HOST/api/2.1/unity-catalog/schemas")
+
+          echo "$RESPONSE"
+
+        }
+
+        create_schema "bronze" "bronze"
+        create_schema "silver" "silver"
+        create_schema "gold" "golden"
