@@ -579,3 +579,215 @@ jobs:
         create_schema "bronze" "bronze"
         create_schema "silver" "silver"
         create_schema "gold" "golden"
+
+    # ============================================================
+    # CREAR / ACTUALIZAR JOB FORMULA1 PROD
+    # PRUEBA: 2 NOTEBOOKS
+    # ============================================================
+
+    - name: Crear o actualizar Job Formula1 PROD
+      env:
+        DATABRICKS_HOST: ${{ secrets.DATABRICKS_DEST_HOST }}
+        DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_DEST_TOKEN }}
+
+      run: |
+
+        echo "========================================"
+        echo "CREANDO / ACTUALIZANDO JOB FORMULA1"
+        echo "========================================"
+
+        STORAGE_NAME="datalakefforeroprod03"
+        CATALOG="formula1_prod"
+
+        echo "Storage : $STORAGE_NAME"
+        echo "Catalog : $CATALOG"
+
+        # --------------------------------------------------------
+        # CREAR CONFIGURACION DEL JOB
+        # --------------------------------------------------------
+
+        cat > job_config.json <<EOF
+        {
+          "name": "Job_Formula_1",
+          "max_concurrent_runs": 1,
+
+          "tasks": [
+
+            {
+              "task_key": "01_Ingest_Circuits_File",
+
+              "notebook_task": {
+                "notebook_path": "/Workspace/Users/fcamifox@gmail.com/proyecto_final_formula1/proceso/01-Bronze/01.Ingest Circuits File",
+                "source": "WORKSPACE",
+
+                "base_parameters": {
+                  "storageName": "$STORAGE_NAME",
+                  "catalogo": "$CATALOG"
+                }
+              },
+
+              "environment_key": "Default"
+            },
+
+            {
+              "task_key": "01_Transform_Circuits_Data",
+
+              "depends_on": [
+                {
+                  "task_key": "01_Ingest_Circuits_File"
+                }
+              ],
+
+              "notebook_task": {
+                "notebook_path": "/Workspace/Users/fcamifox@gmail.com/proyecto_final_formula1/proceso/02-Silver/01.Transform Circuits Data",
+                "source": "WORKSPACE",
+
+                "base_parameters": {
+                  "storageName": "$STORAGE_NAME",
+                  "catalogo": "$CATALOG"
+                }
+              },
+
+              "environment_key": "Default"
+            }
+
+          ],
+
+          "environments": [
+            {
+              "environment_key": "Default",
+
+              "spec": {
+                "environment_version": "5"
+              }
+            }
+          ],
+
+          "queue": {
+            "enabled": true
+          }
+        }
+        EOF
+
+        echo ""
+        echo "========================================"
+        echo "JOB CONFIGURATION"
+        echo "========================================"
+
+        jq . job_config.json
+
+        # --------------------------------------------------------
+        # BUSCAR SI EL JOB YA EXISTE
+        # --------------------------------------------------------
+
+        echo ""
+        echo "Buscando Job_Formula_1..."
+
+        JOBS_RESPONSE=$(curl -sS \
+          -X GET \
+          -H "Authorization: Bearer $DATABRICKS_TOKEN" \
+          "$DATABRICKS_HOST/api/2.1/jobs/list?limit=100")
+
+        echo "$JOBS_RESPONSE" | jq .
+
+        JOB_ID=$(echo "$JOBS_RESPONSE" | jq -r '
+          .jobs[]
+          | select(.settings.name == "Job_Formula_1")
+          | .job_id
+        ' | head -n 1)
+
+        # --------------------------------------------------------
+        # CREAR SI NO EXISTE
+        # --------------------------------------------------------
+
+        if [ -z "$JOB_ID" ] || [ "$JOB_ID" = "null" ]; then
+
+          echo ""
+          echo "========================================"
+          echo "JOB NO EXISTE"
+          echo "CREANDO JOB..."
+          echo "========================================"
+
+          RESPONSE=$(curl -sS \
+            -w "\n%{http_code}" \
+            -X POST \
+            -H "Authorization: Bearer $DATABRICKS_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d @job_config.json \
+            "$DATABRICKS_HOST/api/2.1/jobs/create")
+
+          HTTP_CODE=$(echo "$RESPONSE" | tail -n 1)
+          BODY=$(echo "$RESPONSE" | sed '$d')
+
+          echo "HTTP CODE = $HTTP_CODE"
+          echo "$BODY" | jq .
+
+          if [ "$HTTP_CODE" != "200" ]; then
+            echo "ERROR: No se pudo crear el Job"
+            exit 1
+          fi
+
+          JOB_ID=$(echo "$BODY" | jq -r '.job_id')
+
+          echo "Job creado correctamente."
+
+        else
+
+          # ------------------------------------------------------
+          # ACTUALIZAR / SOBRESCRIBIR JOB EXISTENTE
+          # ------------------------------------------------------
+
+          echo ""
+          echo "========================================"
+          echo "JOB EXISTENTE"
+          echo "JOB_ID = $JOB_ID"
+          echo "SOBRESCRIBIENDO CONFIGURACION..."
+          echo "========================================"
+
+          RESET_PAYLOAD=$(jq \
+            --argjson job_id "$JOB_ID" \
+            '{job_id: $job_id, new_settings: .}' \
+            job_config.json)
+
+          RESPONSE=$(curl -sS \
+            -w "\n%{http_code}" \
+            -X POST \
+            -H "Authorization: Bearer $DATABRICKS_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d "$RESET_PAYLOAD" \
+            "$DATABRICKS_HOST/api/2.1/jobs/reset")
+
+          HTTP_CODE=$(echo "$RESPONSE" | tail -n 1)
+          BODY=$(echo "$RESPONSE" | sed '$d')
+
+          echo "HTTP CODE = $HTTP_CODE"
+          echo "$BODY" | jq .
+
+          if [ "$HTTP_CODE" != "200" ]; then
+            echo "ERROR: No se pudo actualizar el Job"
+            exit 1
+          fi
+
+          echo "Job actualizado correctamente."
+
+        fi
+
+        # --------------------------------------------------------
+        # VALIDAR JOB_ID
+        # --------------------------------------------------------
+
+        if [ -z "$JOB_ID" ] || [ "$JOB_ID" = "null" ]; then
+          echo "ERROR: JOB_ID está vacío"
+          exit 1
+        fi
+
+        echo ""
+        echo "========================================"
+        echo "JOB LISTO"
+        echo "JOB_ID = $JOB_ID"
+        echo "========================================"
+
+        # IMPORTANTE:
+        # Guardamos JOB_ID para el siguiente step de GitHub Actions
+
+        echo "JOB_ID=$JOB_ID" >> "$GITHUB_ENV"
