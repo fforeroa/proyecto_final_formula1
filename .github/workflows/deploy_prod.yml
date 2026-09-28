@@ -477,3 +477,35 @@ jobs:
         fi
 
         echo "Job creado correctamente."
+    
+    - name: Ejecutar Job Formula1 PROD
+      env:
+        DATABRICKS_HOST: ${{ secrets.DATABRICKS_DEST_HOST }}
+        DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_DEST_TOKEN }}
+
+      run: |
+
+        echo "========================================"
+        echo "EJECUTANDO JOB FORMULA1 PROD"
+        echo "========================================"
+
+        RESPONSE=$(curl -f -sS \
+          -X POST \
+          -H "Authorization: Bearer $DATABRICKS_TOKEN" \
+          -H "Content-Type: application/json" \
+          -d "{\"job_id\": $JOB_ID}" \
+          "$DATABRICKS_HOST/api/2.1/jobs/run-now")
+
+        echo "Respuesta:"
+        echo "$RESPONSE" | jq .
+
+        RUN_ID=$(echo "$RESPONSE" | jq -r '.run_id')
+
+        echo "RUN_ID=$RUN_ID"
+
+        if [ "$RUN_ID" = "null" ] || [ -z "$RUN_ID" ]; then
+          echo "ERROR: No se pudo ejecutar el Job"
+          exit 1
+        fi
+
+        echo "Job iniciado correctamente."
