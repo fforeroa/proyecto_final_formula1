@@ -791,3 +791,141 @@ jobs:
         # Guardamos JOB_ID para el siguiente step de GitHub Actions
 
         echo "JOB_ID=$JOB_ID" >> "$GITHUB_ENV"
+
+   # ============================================================
+   # EJECUTAR JOB FORMULA1 PROD
+   # ============================================================
+
+    - name: Ejecutar Job Formula1 PROD
+      env:
+        DATABRICKS_HOST: ${{ secrets.DATABRICKS_DEST_HOST }}
+        DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_DEST_TOKEN }}
+
+      run: |
+
+        echo "========================================"
+        echo "EJECUTANDO JOB FORMULA1 PROD"
+        echo "========================================"
+
+        echo "JOB_ID=$JOB_ID"
+
+        if [ -z "$JOB_ID" ]; then
+          echo "ERROR: JOB_ID está vacío"
+          exit 1
+        fi
+
+        RESPONSE=$(curl -sS \
+          -w "\n%{http_code}" \
+          -X POST \
+          -H "Authorization: Bearer $DATABRICKS_TOKEN" \
+          -H "Content-Type: application/json" \
+          -d "{\"job_id\": $JOB_ID}" \
+          "$DATABRICKS_HOST/api/2.1/jobs/run-now")
+
+        HTTP_CODE=$(echo "$RESPONSE" | tail -n 1)
+        BODY=$(echo "$RESPONSE" | sed '$d')
+
+        echo "HTTP CODE = $HTTP_CODE"
+
+        echo "Respuesta:"
+        echo "$BODY" | jq .
+
+        if [ "$HTTP_CODE" != "200" ]; then
+          echo "ERROR: Databricks no pudo iniciar el Job"
+          exit 1
+        fi
+
+        RUN_ID=$(echo "$BODY" | jq -r '.run_id')
+
+        if [ -z "$RUN_ID" ] || [ "$RUN_ID" = "null" ]; then
+          echo "ERROR: No se obtuvo RUN_ID"
+          exit 1
+        fi
+
+        echo ""
+        echo "========================================"
+        echo "JOB INICIADO"
+        echo "RUN_ID = $RUN_ID"
+        echo "========================================"
+
+        echo "RUN_ID=$RUN_ID" >> "$GITHUB_ENV"
+
+   # ============================================================
+   # ESPERAR RESULTADO DEL JOB
+   # ============================================================
+
+    - name: Esperar resultado del Job
+      env:
+        DATABRICKS_HOST: ${{ secrets.DATABRICKS_DEST_HOST }}
+        DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_DEST_TOKEN }}
+
+      run: |
+
+        echo "========================================"
+        echo "ESPERANDO RESULTADO DEL JOB"
+        echo "========================================"
+
+        echo "RUN_ID=$RUN_ID"
+
+        if [ -z "$RUN_ID" ]; then
+          echo "ERROR: RUN_ID está vacío"
+          exit 1
+        fi
+
+        while true; do
+
+          RESPONSE=$(curl -sS \
+            -X GET \
+            -H "Authorization: Bearer $DATABRICKS_TOKEN" \
+            "$DATABRICKS_HOST/api/2.1/jobs/runs/get?run_id=$RUN_ID")
+
+          LIFE_CYCLE=$(echo "$RESPONSE" | jq -r '.state.life_cycle_state')
+          RESULT_STATE=$(echo "$RESPONSE" | jq -r '.state.result_state')
+          STATE_MESSAGE=$(echo "$RESPONSE" | jq -r '.state.state_message')
+
+          echo ""
+          echo "----------------------------------------"
+          echo "Life Cycle   : $LIFE_CYCLE"
+          echo "Result State : $RESULT_STATE"
+          echo "Mensaje      : $STATE_MESSAGE"
+          echo "----------------------------------------"
+
+          case "$LIFE_CYCLE" in
+
+            TERMINATED)
+              echo ""
+              echo "Job terminado."
+
+              if [ "$RESULT_STATE" = "SUCCESS" ]; then
+                echo ""
+                echo "========================================"
+                echo "JOB EXITOSO"
+                echo "========================================"
+                exit 0
+              else
+                echo ""
+                echo "========================================"
+                echo "JOB FALLIDO"
+                echo "========================================"
+                exit 1
+              fi
+              ;;
+
+            SKIPPED)
+              echo "Job skipped."
+              exit 1
+              ;;
+
+            INTERNAL_ERROR)
+              echo "Error interno del Job."
+              exit 1
+              ;;
+
+            *)
+              echo "Job todavía ejecutándose..."
+              sleep 10
+              ;;
+
+          esac
+
+        done
