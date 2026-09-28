@@ -381,102 +381,7 @@ jobs:
         create_schema "bronze" "bronze"
         create_schema "silver" "silver"
         create_schema "gold" "golden"
-
-    - name: Crear Job Formula1 PROD
-      env:
-        DATABRICKS_HOST: ${{ secrets.DATABRICKS_DEST_HOST }}
-        DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_DEST_TOKEN }}
-
-      run: |
-
-        cat <<EOF > job_config.json
-        {
-          "name": "Job_Formula_1",
-          "max_concurrent_runs": 1,
-
-          "parameters": [
-            {
-              "name": "storageName",
-              "default": "$STORAGE_NAME"
-            },
-            {
-              "name": "catalogo",
-              "default": "$CATALOG"
-            }
-          ],
-
-          "queue": {
-            "enabled": true
-          },
-
-          "tasks": [
-
-            {
-              "task_key": "01_Ingest_Circuits_File",
-
-              "notebook_task": {
-                "notebook_path": "/Workspace/Users/fcamifox@gmail.com/proyecto_final_formula1/proceso/01-Bronze/01.Ingest Circuits File",
-                "source": "WORKSPACE",
-                "base_parameters": {
-                  "storageName": "{{job.parameters.storageName}}",
-                  "catalogo": "{{job.parameters.catalogo}}"
-                }
-              }
-            },
-
-            {
-              "task_key": "01_Transform_Circuits_Data",
-
-              "depends_on": [
-                {
-                  "task_key": "01_Ingest_Circuits_File"
-                }
-              ],
-
-              "notebook_task": {
-                "notebook_path": "/Workspace/Users/fcamifox@gmail.com/proyecto_final_formula1/proceso/01-Bronze/01.Transform Circuits Data",
-                "source": "WORKSPACE",
-                "base_parameters": {
-                  "storageName": "{{job.parameters.storageName}}",
-                  "catalogo": "{{job.parameters.catalogo}}"
-                }
-              }
-            }
-
-          ]
-        }
-        EOF
-
-        echo "========================================"
-        echo "CONFIGURACION DEL JOB"
-        echo "========================================"
-
-        cat job_config.json
-
-        echo "========================================"
-        echo "CREANDO JOB"
-        echo "========================================"
-
-        RESPONSE=$(curl -f -sS \
-          -X POST \
-          -H "Authorization: Bearer $DATABRICKS_TOKEN" \
-          -H "Content-Type: application/json" \
-          -d @job_config.json \
-          "$DATABRICKS_HOST/api/2.1/jobs/create")
-
-        echo "Respuesta:"
-        echo "$RESPONSE" | jq .
-
-        JOB_ID=$(echo "$RESPONSE" | jq -r '.job_id')
-
-        echo "JOB_ID=$JOB_ID"
-
-        if [ "$JOB_ID" = "null" ] || [ -z "$JOB_ID" ]; then
-          echo "ERROR: No se pudo crear el Job"
-          exit 1
-        fi
-
-        echo "Job creado correctamente."
+  
     
     - name: Ejecutar Job Formula1 PROD
       env:
@@ -489,22 +394,34 @@ jobs:
         echo "EJECUTANDO JOB FORMULA1 PROD"
         echo "========================================"
 
-        RESPONSE=$(curl -f -sS \
+        echo "JOB_ID=$JOB_ID"
+
+        RESPONSE=$(curl -sS \
+          -w "\n%{http_code}" \
           -X POST \
           -H "Authorization: Bearer $DATABRICKS_TOKEN" \
           -H "Content-Type: application/json" \
           -d "{\"job_id\": $JOB_ID}" \
           "$DATABRICKS_HOST/api/2.1/jobs/run-now")
 
-        echo "Respuesta:"
-        echo "$RESPONSE" | jq .
+        HTTP_CODE=$(echo "$RESPONSE" | tail -n 1)
+        BODY=$(echo "$RESPONSE" | sed '$d')
 
-        RUN_ID=$(echo "$RESPONSE" | jq -r '.run_id')
+        echo "HTTP CODE = $HTTP_CODE"
+        echo "Respuesta:"
+        echo "$BODY" | jq .
+
+        if [ "$HTTP_CODE" != "200" ]; then
+          echo "ERROR: Databricks no pudo ejecutar el Job"
+          exit 1
+        fi
+
+        RUN_ID=$(echo "$BODY" | jq -r '.run_id')
 
         echo "RUN_ID=$RUN_ID"
 
         if [ "$RUN_ID" = "null" ] || [ -z "$RUN_ID" ]; then
-          echo "ERROR: No se pudo ejecutar el Job"
+          echo "ERROR: No se obtuvo RUN_ID"
           exit 1
         fi
 
