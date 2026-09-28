@@ -60,25 +60,31 @@
               }
             ],
             "spec": {
-              "data": {
-                "queryName": "main_query"
-              },
+              "version": 3,
+              "widgetType": "bar",
               "encodings": {
                 "x": {
                   "fieldName": "temporada",
+                  "axis": {
+                    "title": "Temporada"
+                  },
                   "scale": {
                     "type": "categorical"
                   }
                 },
                 "y": {
                   "fieldName": "sum(is_win)",
+                  "axis": {
+                    "title": "Victorias"
+                  },
                   "scale": {
                     "type": "quantitative"
                   }
                 }
               },
-              "version": 3,
-              "widgetType": "bar"
+              "data": {
+                "queryName": "main_query"
+              }
             }
           },
           "position": {
@@ -111,28 +117,34 @@
               }
             ],
             "spec": {
-              "data": {
-                "queryName": "main_query"
+              "frame": {
+                "showDescription": true
               },
+              "version": 3,
+              "widgetType": "bar",
               "encodings": {
                 "x": {
                   "fieldName": "temporada",
+                  "axis": {
+                    "title": "Temporada"
+                  },
                   "scale": {
                     "type": "categorical"
                   }
                 },
                 "y": {
                   "fieldName": "sum(is_podium)",
+                  "axis": {
+                    "title": "N° de Podiums"
+                  },
                   "scale": {
                     "type": "quantitative"
                   }
                 }
               },
-              "frame": {
-                "showDescription": true
-              },
-              "version": 3,
-              "widgetType": "bar"
+              "data": {
+                "queryName": "main_query"
+              }
             }
           },
           "position": {
@@ -300,28 +312,34 @@
               }
             ],
             "spec": {
-              "data": {
-                "queryName": "main_query"
+              "frame": {
+                "showDescription": true
               },
+              "version": 3,
+              "widgetType": "pie",
               "encodings": {
                 "angle": {
                   "fieldName": "countdistinct(posicion_final_texto)",
                   "scale": {
                     "type": "quantitative"
+                  },
+                  "axis": {
+                    "title": "Carreras finalizadas vs No Finalizadas"
                   }
                 },
                 "color": {
                   "fieldName": "carreras_finalizadas",
+                  "legend": {
+                    "title": "Carreras"
+                  },
                   "scale": {
                     "type": "categorical"
                   }
                 }
               },
-              "frame": {
-                "showDescription": true
-              },
-              "version": 3,
-              "widgetType": "pie"
+              "data": {
+                "queryName": "main_query"
+              }
             }
           },
           "position": {
@@ -370,25 +388,38 @@
               }
             ],
             "spec": {
-              "data": {
-                "queryName": "main_query"
+              "frame": {
+                "showTitle": true,
+                "title": {
+                  "value": "Historial de puntos",
+                  "fields": []
+                }
               },
+              "version": 3,
+              "widgetType": "bar",
               "encodings": {
                 "x": {
                   "fieldName": "temporada",
+                  "axis": {
+                    "title": "Temporada"
+                  },
                   "scale": {
                     "type": "categorical"
                   }
                 },
                 "y": {
                   "fieldName": "sum(puntos)",
+                  "axis": {
+                    "title": "Puntos"
+                  },
                   "scale": {
                     "type": "quantitative"
                   }
                 }
               },
-              "version": 3,
-              "widgetType": "bar"
+              "data": {
+                "queryName": "main_query"
+              }
             }
           },
           "position": {
