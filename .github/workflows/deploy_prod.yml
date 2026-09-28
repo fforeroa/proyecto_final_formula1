@@ -467,7 +467,7 @@ jobs:
             -X GET \
             -H "Authorization: Bearer $DATABRICKS_TOKEN" \
             "$DATABRICKS_HOST/api/2.0/workspace/export?path=$ENCODED_PATH&format=SOURCE" \
-            > "exported_silver/${NOTEBOOK}.json"
+            > "exported_gold/${NOTEBOOK}.json"
 
           echo "Validando JSON..."
 
