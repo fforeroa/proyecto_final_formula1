@@ -73,6 +73,60 @@ jobs:
         echo "CATALOG=$CATALOG"
         echo "CREDENTIAL=$CREDENTIAL"
 
+    # ============================================================
+    # CREAR ESTRUCTURA DE CARPETAS EN PROD
+    # ============================================================
+
+    - name: Crear estructura Workspace PROD
+      env:
+        DATABRICKS_HOST: ${{ secrets.DATABRICKS_DEST_HOST }}
+        DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_DEST_TOKEN }}
+
+      run: |
+
+        echo "========================================"
+        echo "CREANDO ESTRUCTURA WORKSPACE PROD"
+        echo "========================================"
+
+        FOLDERS=(
+          "/Workspace/Users/fcamifox@gmail.com/proyecto_final_formula1/PrepAmb"
+          "/Workspace/Users/fcamifox@gmail.com/proyecto_final_formula1/proceso/01-Bronze"
+          "/Workspace/Users/fcamifox@gmail.com/proyecto_final_formula1/proceso/02-Silver"
+          "/Workspace/Users/fcamifox@gmail.com/proyecto_final_formula1/proceso/03-gold"
+        )
+
+        for FOLDER in "${FOLDERS[@]}"; do
+
+          echo ""
+          echo "Verificando/creando:"
+          echo "$FOLDER"
+
+          RESPONSE=$(curl -sS \
+            -w "\n%{http_code}" \
+            -X POST \
+            -H "Authorization: Bearer $DATABRICKS_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d "{\"path\":\"$FOLDER\"}" \
+            "$DATABRICKS_HOST/api/2.0/workspace/mkdirs")
+
+          HTTP_CODE=$(echo "$RESPONSE" | tail -n 1)
+          BODY=$(echo "$RESPONSE" | sed '$d')
+
+          echo "HTTP CODE = $HTTP_CODE"
+
+          if [ "$HTTP_CODE" != "200" ]; then
+            echo "$BODY"
+            exit 1
+          fi
+
+          echo "OK"
+
+        done
+
+        echo ""
+        echo "========================================"
+        echo "ESTRUCTURA WORKSPACE LISTA"
+        echo "========================================"
 
     # ============================================================
     # 4. EXPORTAR NOTEBOOKS PREP DESDE DEV
