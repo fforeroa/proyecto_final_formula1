@@ -1358,11 +1358,18 @@ jobs:
             grep -qi "formula1_prod" src/jpmontoya.lvdash.json || { echo "No se reemplazó nada"; exit 1; }
             
     - name: Validar bundle
+      env:
+        DATABRICKS_HOST: ${{ secrets.DATABRICKS_ORIGIN_HOST }}
+        DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_ORIGIN_TOKEN }}
       run: |
             cd dashboard_formula1
             databricks bundle validate
 
     - name: Desplegar bundle
+      env:
+        DATABRICKS_HOST: ${{ secrets.DATABRICKS_DEST_HOST }}
+        DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_DEST_TOKEN }}
+
       run: |
             cd dashboard_formula1
             databricks bundle deploy -t prod
