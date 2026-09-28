@@ -578,7 +578,7 @@ jobs:
 
         create_schema "bronze" "bronze"
         create_schema "silver" "silver"
-        create_schema "gold" "golden"
+        create_schema "golden" "golden"
 
     # ============================================================
     # CREAR / ACTUALIZAR JOB FORMULA1 PROD
