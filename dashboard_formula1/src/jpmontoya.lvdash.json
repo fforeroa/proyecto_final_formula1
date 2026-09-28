@@ -1,0 +1,461 @@
+{
+  "datasets": [
+    {
+      "catalog": "formula1",
+      "displayName": "Montoya",
+      "name": "bf72d966",
+      "queryLines": [
+        "select \r\n",
+        "a.estado,\r\n",
+        "a.posicion_final_texto,\r\n",
+        "a.posicion_final,\r\n",
+        "a.posicion_grilla,\r\n",
+        "a.puntos,\r\n",
+        "case when a.is_win=true then 1 else 0 end as  is_win,\r\n",
+        "case when a.is_podium=true then 1 else 0 end as is_podium,\r\n",
+        "case when a.estado ='Finalizado' then 'Finalizado' else 'No Finalizado' end as carreras_finalizadas,\r\n",
+        "a.has_points,\r\n",
+        "b.nombre_piloto,\r\n",
+        "c.nombre_constrcutor,\r\n",
+        "d.nombre_carrera,\r\n",
+        "d.nombre_circuito,\r\n",
+        "a.temporada\r\n",
+        "from\r\n",
+        "gold.fact_resultado_sesion a\r\n",
+        "join\r\n",
+        "gold.dim_piloto b on a.id_piloto=b.id_piloto\r\n",
+        "join gold.dim_constructor c on a.id_constructor=c.id_constructor\r\n",
+        "join gold.dim_carrera d on a.temporada=d.temporada and a.numero_carrera= d.numero_carrera\r\n",
+        "join gold.dim_constructor e on a.id_constructor=e.id_constructor\r\n",
+        "where b.nombre_piloto='Juan Pablo Montoya'\r\n"
+      ],
+      "schema": "default"
+    }
+  ],
+  "pages": [
+    {
+      "displayName": "Pagina 1",
+      "layout": [
+        {
+          "position": {
+            "height": 6,
+            "width": 6,
+            "x": 6,
+            "y": 11
+          },
+          "widget": {
+            "name": "47aaa84f",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "bf72d966",
+                  "disaggregated": false,
+                  "fields": [
+                    {
+                      "expression": "`temporada`",
+                      "name": "temporada"
+                    },
+                    {
+                      "expression": "SUM(`is_win`)",
+                      "name": "sum(is_win)"
+                    }
+                  ]
+                }
+              }
+            ],
+            "spec": {
+              "data": {
+                "queryName": "main_query"
+              },
+              "encodings": {
+                "x": {
+                  "fieldName": "temporada",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "y": {
+                  "fieldName": "sum(is_win)",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                }
+              },
+              "version": 3,
+              "widgetType": "bar"
+            }
+          }
+        },
+        {
+          "position": {
+            "height": 6,
+            "width": 6,
+            "x": 0,
+            "y": 11
+          },
+          "widget": {
+            "name": "0f17c6ed",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "bf72d966",
+                  "disaggregated": false,
+                  "fields": [
+                    {
+                      "expression": "`temporada`",
+                      "name": "temporada"
+                    },
+                    {
+                      "expression": "SUM(`is_podium`)",
+                      "name": "sum(is_podium)"
+                    }
+                  ]
+                }
+              }
+            ],
+            "spec": {
+              "data": {
+                "queryName": "main_query"
+              },
+              "encodings": {
+                "x": {
+                  "fieldName": "temporada",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "y": {
+                  "fieldName": "sum(is_podium)",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                }
+              },
+              "frame": {
+                "showDescription": true
+              },
+              "version": 3,
+              "widgetType": "bar"
+            }
+          }
+        },
+        {
+          "position": {
+            "height": 2,
+            "width": 4,
+            "x": 0,
+            "y": 3
+          },
+          "widget": {
+            "name": "aa9bf846",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "bf72d966",
+                  "disaggregated": false,
+                  "fields": [
+                    {
+                      "expression": "COUNT(DISTINCT `temporada`)",
+                      "name": "countdistinct(temporada)"
+                    }
+                  ]
+                }
+              }
+            ],
+            "spec": {
+              "data": {
+                "queryName": "main_query"
+              },
+              "encodings": {
+                "value": {
+                  "fieldName": "countdistinct(temporada)"
+                }
+              },
+              "frame": {
+                "description": {
+                  "fields": [],
+                  "value": "<span style=\"text-align:center;display:block\"><span style=\"font-size: 16px;\">**Temporadas**</span></span>"
+                },
+                "showDescription": true
+              },
+              "version": 2,
+              "widgetType": "counter"
+            }
+          }
+        },
+        {
+          "position": {
+            "height": 2,
+            "width": 3,
+            "x": 4,
+            "y": 3
+          },
+          "widget": {
+            "name": "victorias",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "bf72d966",
+                  "disaggregated": false,
+                  "fields": [
+                    {
+                      "expression": "SUM(`is_win`)",
+                      "name": "sum(is_win)"
+                    }
+                  ]
+                }
+              }
+            ],
+            "spec": {
+              "data": {
+                "queryName": "main_query"
+              },
+              "encodings": {
+                "value": {
+                  "fieldName": "sum(is_win)"
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": {
+                  "fields": [],
+                  "value": "<span style=\"text-align:center;display:block\"><span style=\"font-size: 16px;\">Victorias</span></span>"
+                }
+              },
+              "version": 2,
+              "widgetType": "counter"
+            }
+          }
+        },
+        {
+          "position": {
+            "height": 2,
+            "width": 5,
+            "x": 7,
+            "y": 3
+          },
+          "widget": {
+            "name": "podiums",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "bf72d966",
+                  "disaggregated": false,
+                  "fields": [
+                    {
+                      "expression": "SUM(`is_podium`)",
+                      "name": "sum(is_podium)"
+                    }
+                  ]
+                }
+              }
+            ],
+            "spec": {
+              "data": {
+                "queryName": "main_query"
+              },
+              "encodings": {
+                "value": {
+                  "fieldName": "sum(is_podium)"
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": {
+                  "fields": [],
+                  "value": "<span style=\"text-align:center;display:block;\"><span style=\"font-size: 16px;\">Podiums</span></span>"
+                }
+              },
+              "version": 2,
+              "widgetType": "counter"
+            }
+          }
+        },
+        {
+          "position": {
+            "height": 6,
+            "width": 12,
+            "x": 0,
+            "y": 17
+          },
+          "widget": {
+            "name": "00ed288a",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "bf72d966",
+                  "disaggregated": false,
+                  "fields": [
+                    {
+                      "expression": "COUNT(DISTINCT `posicion_final_texto`)",
+                      "name": "countdistinct(posicion_final_texto)"
+                    },
+                    {
+                      "expression": "`carreras_finalizadas`",
+                      "name": "carreras_finalizadas"
+                    }
+                  ]
+                }
+              }
+            ],
+            "spec": {
+              "data": {
+                "queryName": "main_query"
+              },
+              "encodings": {
+                "angle": {
+                  "fieldName": "countdistinct(posicion_final_texto)",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "color": {
+                  "fieldName": "carreras_finalizadas",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                }
+              },
+              "frame": {
+                "showDescription": true
+              },
+              "version": 3,
+              "widgetType": "pie"
+            }
+          }
+        },
+        {
+          "position": {
+            "height": 2,
+            "width": 12,
+            "x": 0,
+            "y": 0
+          },
+          "widget": {
+            "multilineTextboxSpec": {
+              "lines": [
+                "<span style=\"font-size: 36px;line-height: 1.5;\">Juan Pablo Montoya - Datos relevantes</span>"
+              ]
+            },
+            "name": "9eb367ed"
+          }
+        },
+        {
+          "position": {
+            "height": 6,
+            "width": 12,
+            "x": 0,
+            "y": 5
+          },
+          "widget": {
+            "name": "41394dbc",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "bf72d966",
+                  "disaggregated": false,
+                  "fields": [
+                    {
+                      "expression": "`temporada`",
+                      "name": "temporada"
+                    },
+                    {
+                      "expression": "SUM(`puntos`)",
+                      "name": "sum(puntos)"
+                    }
+                  ]
+                }
+              }
+            ],
+            "spec": {
+              "data": {
+                "queryName": "main_query"
+              },
+              "encodings": {
+                "x": {
+                  "fieldName": "temporada",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "y": {
+                  "fieldName": "sum(puntos)",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                }
+              },
+              "version": 3,
+              "widgetType": "bar"
+            }
+          }
+        },
+        {
+          "position": {
+            "height": 1,
+            "width": 4,
+            "x": 0,
+            "y": 2
+          },
+          "widget": {
+            "name": "escuderia",
+            "queries": [
+              {
+                "name": "dashboards/01f1bb661cf312bfac8d81816ff54831/datasets/01f1bb6f588411258684036b16153f9c_nombre_constrcutor",
+                "query": {
+                  "datasetName": "bf72d966",
+                  "disaggregated": false,
+                  "fields": [
+                    {
+                      "expression": "`nombre_constrcutor`",
+                      "name": "nombre_constrcutor"
+                    },
+                    {
+                      "expression": "COUNT_IF(`associative_filter_predicate_group`)",
+                      "name": "nombre_constrcutor_associativity"
+                    }
+                  ]
+                }
+              }
+            ],
+            "spec": {
+              "encodings": {
+                "fields": [
+                  {
+                    "fieldName": "nombre_constrcutor",
+                    "queryName": "dashboards/01f1bb661cf312bfac8d81816ff54831/datasets/01f1bb6f588411258684036b16153f9c_nombre_constrcutor"
+                  }
+                ]
+              },
+              "frame": {
+                "showTitle": true,
+                "title": {
+                  "fields": [],
+                  "value": "Escudería"
+                }
+              },
+              "version": 2,
+              "widgetType": "filter-single-select"
+            }
+          }
+        }
+      ],
+      "layoutVersion": "GRID_V1",
+      "name": "b97f84bc",
+      "pageType": "PAGE_TYPE_CANVAS"
+    }
+  ],
+  "uiSettings": {
+    "applyModeEnabled": false,
+    "theme": {
+      "widgetHeaderAlignment": "ALIGNMENT_UNSPECIFIED"
+    }
+  }
+}

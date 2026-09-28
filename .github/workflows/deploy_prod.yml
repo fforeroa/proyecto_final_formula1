@@ -1343,3 +1343,21 @@ jobs:
           esac
 
         done
+
+    - name: Apuntar el dashboard a prod
+      run: |
+          # Reemplaza las referencias de desarrollo (formula1.) por las de producción (formula1_prod.)
+          sed -i 's/formula1\./formula1_prod./g' dashboard/JPMontoya.lvdash.json
+            
+          # Valida que el reemplazo se haya realizado con éxito
+          grep -q "formula1_prod\." dashboard/JPMontoya.lvdash.json || { echo "No se reemplazó nada"; exit 1; }
+            
+    - name: Validar bundle
+      run: |
+            cd dashboard_formula1
+            databricks bundle validate
+
+    - name: Desplegar bundle
+      run: |
+            cd dashboard_formula1
+            databricks bundle deploy -t prod

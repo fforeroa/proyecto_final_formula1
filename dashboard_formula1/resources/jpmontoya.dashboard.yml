@@ -1,0 +1,6 @@
+resources:
+  dashboards:
+    jpmontoya:
+      display_name: "JPMontoya"
+      warehouse_id: ${var.warehouse_id}
+      file_path: ../src/jpmontoya.lvdash.json
