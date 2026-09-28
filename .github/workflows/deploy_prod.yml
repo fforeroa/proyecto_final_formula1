@@ -767,33 +767,7 @@ jobs:
               },
 
               "environment_key": "Default"
-            },
-
-            
-            {
-              "task_key": "03_Transform_Constructors_Data",
-
-              "depends_on": [
-                {
-                  "task_key": "03_Ingest_Constructors_File"
-                  "task_key": "Build_Nationality_Region_Reference"
-                }
-              ],
-
-              "notebook_task": {
-                "notebook_path": "/Workspace/Users/fcamifox@gmail.com/proyecto_final_formula1/proceso/02-Silver/03.Transform Constructors Data",
-                "source": "WORKSPACE",
-
-                "base_parameters": {
-                  "storageName": "$STORAGE_NAME",
-                  "catalogo": "$CATALOG"
-                }
-              },
-
-              "environment_key": "Default"
             }
-
-
 
           ],
 
