@@ -383,6 +383,109 @@ jobs:
         create_schema "gold" "golden"
   
     
+    - name: Crear Job Formula1 PROD
+      env:
+        DATABRICKS_HOST: ${{ secrets.DATABRICKS_DEST_HOST }}
+        DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_DEST_TOKEN }}
+
+      run: |
+
+        echo "========================================"
+        echo "CREANDO CONFIGURACION DEL JOB"
+        echo "========================================"
+
+        cat <<EOF > job_config.json
+        {
+          "name": "Job_Formula_1",
+          "max_concurrent_runs": 1,
+
+          "tasks": [
+            {
+              "task_key": "01_Ingest_Circuits_File",
+
+              "notebook_task": {
+                "notebook_path": "/Workspace/Users/fcamifox@gmail.com/proyecto_final_formula1/proceso/01-Bronze/01.Ingest Circuits File",
+                "source": "WORKSPACE",
+                "base_parameters": {
+                  "storageName": "$STORAGE_NAME",
+                  "catalogo": "$CATALOG"
+                }
+              },
+
+              "environment_key": "Default"
+            },
+
+            {
+              "task_key": "01_Transform_Circuits_Data",
+
+              "depends_on": [
+                {
+                  "task_key": "01_Ingest_Circuits_File"
+                }
+              ],
+
+              "notebook_task": {
+                "notebook_path": "/Workspace/Users/fcamifox@gmail.com/proyecto_final_formula1/proceso/01-Bronze/01.Transform Circuits Data",
+                "source": "WORKSPACE",
+                "base_parameters": {
+                  "storageName": "$STORAGE_NAME",
+                  "catalogo": "$CATALOG"
+                }
+              },
+
+              "environment_key": "Default"
+            }
+          ],
+
+          "environments": [
+            {
+              "environment_key": "Default",
+              "spec": {
+                "environment_version": "5"
+              }
+            }
+          ],
+
+          "performance_target": "PERFORMANCE_OPTIMIZED"
+        }
+        EOF
+
+        echo "========================================"
+        echo "JOB CONFIG"
+        echo "========================================"
+
+        cat job_config.json
+
+        echo "========================================"
+        echo "CREANDO JOB"
+        echo "========================================"
+
+        RESPONSE=$(curl -f -sS \
+          -X POST \
+          -H "Authorization: Bearer $DATABRICKS_TOKEN" \
+          -H "Content-Type: application/json" \
+          -d @job_config.json \
+          "$DATABRICKS_HOST/api/2.2/jobs/create")
+
+        echo "Respuesta creación Job:"
+        echo "$RESPONSE" | jq .
+
+        JOB_ID=$(echo "$RESPONSE" | jq -r '.job_id')
+
+        echo "JOB_ID=$JOB_ID"
+
+        if [ "$JOB_ID" = "null" ] || [ -z "$JOB_ID" ]; then
+          echo "ERROR: No se pudo obtener JOB_ID"
+          exit 1
+        fi
+
+        echo "JOB_ID=$JOB_ID" >> $GITHUB_ENV
+
+        echo "========================================"
+        echo "JOB CREADO CORRECTAMENTE"
+        echo "JOB_ID=$JOB_ID"
+        echo "========================================"
+
     - name: Ejecutar Job Formula1 PROD
       env:
         DATABRICKS_HOST: ${{ secrets.DATABRICKS_DEST_HOST }}
@@ -396,18 +499,24 @@ jobs:
 
         echo "JOB_ID=$JOB_ID"
 
+        if [ -z "$JOB_ID" ]; then
+          echo "ERROR: JOB_ID está vacío"
+          exit 1
+        fi
+
         RESPONSE=$(curl -sS \
           -w "\n%{http_code}" \
           -X POST \
           -H "Authorization: Bearer $DATABRICKS_TOKEN" \
           -H "Content-Type: application/json" \
           -d "{\"job_id\": $JOB_ID}" \
-          "$DATABRICKS_HOST/api/2.1/jobs/run-now")
+          "$DATABRICKS_HOST/api/2.2/jobs/run-now")
 
         HTTP_CODE=$(echo "$RESPONSE" | tail -n 1)
         BODY=$(echo "$RESPONSE" | sed '$d')
 
         echo "HTTP CODE = $HTTP_CODE"
+
         echo "Respuesta:"
         echo "$BODY" | jq .
 
@@ -425,4 +534,7 @@ jobs:
           exit 1
         fi
 
-        echo "Job iniciado correctamente."
+        echo "========================================"
+        echo "JOB INICIADO CORRECTAMENTE"
+        echo "RUN_ID=$RUN_ID"
+        echo "========================================"
