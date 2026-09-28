@@ -1012,6 +1012,29 @@ jobs:
               },
 
               "environment_key": "Default"
+            },
+
+            {
+              "task_key": "02_Build_Constructors_Dimension",
+
+              "depends_on": [
+                {
+                  "task_key": "03_Transform_Constructors_Data"
+                }
+                
+              ],
+
+              "notebook_task": {
+                "notebook_path": "/Workspace/Users/fcamifox@gmail.com/proyecto_final_formula1/proceso/03-gold/02.Build Constructors Dimension",
+                "source": "WORKSPACE",
+
+                "base_parameters": {
+                  "storageName": "$STORAGE_NAME",
+                  "catalogo": "$CATALOG"
+                }
+              },
+
+              "environment_key": "Default"
             }
 
            
