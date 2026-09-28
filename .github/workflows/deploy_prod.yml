@@ -1346,7 +1346,7 @@ jobs:
      
     #/Workspace/Users/fcamifox@gmail.com/proyecto_final_formula1/dashboard_formula1/src
     - name: Instalar Databricks CLI
-      uses: databricks/setup-cli@v0.2.0
+      uses: databricks/setup-cli@main
 
     - name: Apuntar el dashboard a prod
       working-directory: ./dashboard_formula1
