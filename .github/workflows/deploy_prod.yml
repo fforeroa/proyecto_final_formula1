@@ -382,152 +382,98 @@ jobs:
         create_schema "silver" "silver"
         create_schema "gold" "golden"
 
-resources:
-  jobs:
-    Job_Formula_1:
-      name: Job_Formula_1
+    - name: Crear Job Formula1 PROD
+      env:
+        DATABRICKS_HOST: ${{ secrets.DATABRICKS_DEST_HOST }}
+        DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_DEST_TOKEN }}
 
-      parameters:
-        - name: storageName
-          default: datalakefforeroprod03
+      run: |
 
-        - name: catalogo
-          default: formula1_prod
+        cat <<EOF > job_config.json
+        {
+          "name": "Job_Formula_1",
+          "max_concurrent_runs": 1,
 
-      tasks:
+          "parameters": [
+            {
+              "name": "storageName",
+              "default": "$STORAGE_NAME"
+            },
+            {
+              "name": "catalogo",
+              "default": "$CATALOG"
+            }
+          ],
 
-        - task_key: 01_Ingest_Circuits_File
-          notebook_task:
-            notebook_path: /Workspace/Users/fcamifox@gmail.com/proyecto_final_formula1/proceso/01-Bronze/01.Ingest Circuits File
-            source: WORKSPACE
-          environment_key: Default
+          "queue": {
+            "enabled": true
+          },
 
-        - task_key: 01_Transform_Circuits_Data
-          depends_on:
-            - task_key: 01_Ingest_Circuits_File
-          notebook_task:
-            notebook_path: /Workspace/Users/fcamifox@gmail.com/proyecto_final_formula1/proceso/02-Silver/01.Transform Circuits Data
-            source: WORKSPACE
-          environment_key: Default
+          "tasks": [
 
-        - task_key: 02_Ingest_Races_File
-          notebook_task:
-            notebook_path: /Workspace/Users/fcamifox@gmail.com/proyecto_final_formula1/proceso/01-Bronze/02.Ingest Races File
-            source: WORKSPACE
-          environment_key: Default
+            {
+              "task_key": "01_Ingest_Circuits_File",
 
-        - task_key: 02_Transform_Races_Data
-          depends_on:
-            - task_key: 02_Ingest_Races_File
-          notebook_task:
-            notebook_path: /Workspace/Users/fcamifox@gmail.com/proyecto_final_formula1/proceso/02-Silver/02.Transform Races Data
-            source: WORKSPACE
-          environment_key: Default
+              "notebook_task": {
+                "notebook_path": "/Workspace/Users/fcamifox@gmail.com/proyecto_final_formula1/proceso/01-Bronze/01.Ingest Circuits File",
+                "source": "WORKSPACE",
+                "base_parameters": {
+                  "storageName": "{{job.parameters.storageName}}",
+                  "catalogo": "{{job.parameters.catalogo}}"
+                }
+              }
+            },
 
-        - task_key: 01_Build_Races_Dimension
-          depends_on:
-            - task_key: 01_Transform_Circuits_Data
-            - task_key: 02_Transform_Races_Data
-          notebook_task:
-            notebook_path: /Workspace/Users/fcamifox@gmail.com/proyecto_final_formula1/proceso/03-gold/01.Build Races Dimension
-            source: WORKSPACE
-          environment_key: Default
+            {
+              "task_key": "01_Transform_Circuits_Data",
 
-        - task_key: 03_Ingest_Constructors_File
-          notebook_task:
-            notebook_path: /Workspace/Users/fcamifox@gmail.com/proyecto_final_formula1/proceso/01-Bronze/03.Ingest Constructors File
-            source: WORKSPACE
-          environment_key: Default
+              "depends_on": [
+                {
+                  "task_key": "01_Ingest_Circuits_File"
+                }
+              ],
 
-        - task_key: 04_Ingest_Drivers_File
-          notebook_task:
-            notebook_path: /Workspace/Users/fcamifox@gmail.com/proyecto_final_formula1/proceso/01-Bronze/04.Ingest Drivers File
-            source: WORKSPACE
-          environment_key: Default
+              "notebook_task": {
+                "notebook_path": "/Workspace/Users/fcamifox@gmail.com/proyecto_final_formula1/proceso/01-Bronze/01.Transform Circuits Data",
+                "source": "WORKSPACE",
+                "base_parameters": {
+                  "storageName": "{{job.parameters.storageName}}",
+                  "catalogo": "{{job.parameters.catalogo}}"
+                }
+              }
+            }
 
-        - task_key: 05_Ingest_Results_File
-          notebook_task:
-            notebook_path: /Workspace/Users/fcamifox@gmail.com/proyecto_final_formula1/proceso/01-Bronze/05.Ingest Results File
-            source: WORKSPACE
-          environment_key: Default
+          ]
+        }
+        EOF
 
-        - task_key: 05_Transform_Results_data
-          depends_on:
-            - task_key: 05_Ingest_Results_File
-          notebook_task:
-            notebook_path: /Workspace/Users/fcamifox@gmail.com/proyecto_final_formula1/proceso/02-Silver/05.Transform Results Data
-            source: WORKSPACE
-          environment_key: Default
+        echo "========================================"
+        echo "CONFIGURACION DEL JOB"
+        echo "========================================"
 
-        - task_key: 06_Ingest_Sprints_File
-          notebook_task:
-            notebook_path: /Workspace/Users/fcamifox@gmail.com/proyecto_final_formula1/proceso/01-Bronze/06.Ingest Sprints File
-            source: WORKSPACE
-          environment_key: Default
+        cat job_config.json
 
-        - task_key: 06_Transform_Sprints_Data
-          depends_on:
-            - task_key: 06_Ingest_Sprints_File
-          notebook_task:
-            notebook_path: /Workspace/Users/fcamifox@gmail.com/proyecto_final_formula1/proceso/02-Silver/06.Transform Sprints Data
-            source: WORKSPACE
-          environment_key: Default
+        echo "========================================"
+        echo "CREANDO JOB"
+        echo "========================================"
 
-        - task_key: 04_Build_Results_Fact_Table
-          depends_on:
-            - task_key: 06_Transform_Sprints_Data
-            - task_key: 05_Transform_Results_data
-          notebook_task:
-            notebook_path: /Workspace/Users/fcamifox@gmail.com/proyecto_final_formula1/proceso/03-gold/04.Build Results Fact
-            source: WORKSPACE
-          environment_key: Default
+        RESPONSE=$(curl -f -sS \
+          -X POST \
+          -H "Authorization: Bearer $DATABRICKS_TOKEN" \
+          -H "Content-Type: application/json" \
+          -d @job_config.json \
+          "$DATABRICKS_HOST/api/2.1/jobs/create")
 
-        - task_key: 91_Nationality_Region_Reference
-          notebook_task:
-            notebook_path: /Workspace/Users/fcamifox@gmail.com/proyecto_final_formula1/proceso/02-Silver/91.Build_Nationality_Region_Reference
-            source: WORKSPACE
-          environment_key: Default
+        echo "Respuesta:"
+        echo "$RESPONSE" | jq .
 
-        - task_key: 03_Transform_Constructors_Data
-          depends_on:
-            - task_key: 03_Ingest_Constructors_File
-            - task_key: 91_Nationality_Region_Reference
-          notebook_task:
-            notebook_path: /Workspace/Users/fcamifox@gmail.com/proyecto_final_formula1/proceso/02-Silver/03.Transform Constructors Data
-            source: WORKSPACE
-          environment_key: Default
+        JOB_ID=$(echo "$RESPONSE" | jq -r '.job_id')
 
-        - task_key: 02_Build_Constructors_Dimension
-          depends_on:
-            - task_key: 03_Transform_Constructors_Data
-          notebook_task:
-            notebook_path: /Workspace/Users/fcamifox@gmail.com/proyecto_final_formula1/proceso/03-gold/02.Build Constructors Dimension
-            source: WORKSPACE
-          environment_key: Default
+        echo "JOB_ID=$JOB_ID"
 
-        - task_key: 04_Transform_Drivers_Data
-          depends_on:
-            - task_key: 04_Ingest_Drivers_File
-            - task_key: 91_Nationality_Region_Reference
-          notebook_task:
-            notebook_path: /Workspace/Users/fcamifox@gmail.com/proyecto_final_formula1/proceso/02-Silver/04.Transform Drivers Data
-            source: WORKSPACE
-          environment_key: Default
+        if [ "$JOB_ID" = "null" ] || [ -z "$JOB_ID" ]; then
+          echo "ERROR: No se pudo crear el Job"
+          exit 1
+        fi
 
-        - task_key: 03_Build_Drivers_Dimension
-          depends_on:
-            - task_key: 04_Transform_Drivers_Data
-          notebook_task:
-            notebook_path: /Workspace/Users/fcamifox@gmail.com/proyecto_final_formula1/proceso/03-gold/03.Build Drivers Dimension
-            source: WORKSPACE
-          environment_key: Default
-
-      queue:
-        enabled: true
-
-      environments:
-        - environment_key: Default
-          spec:
-            environment_version: "5"
-
-      performance_target: PERFORMANCE_OPTIMIZED
+        echo "Job creado correctamente."
