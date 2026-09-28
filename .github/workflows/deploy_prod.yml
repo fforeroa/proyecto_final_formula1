@@ -439,6 +439,108 @@ jobs:
 
         done
 
+    - name: Exportar notebooks Golden
+      env:
+        DATABRICKS_HOST: ${{ secrets.DATABRICKS_ORIGIN_HOST }}
+        DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_ORIGIN_TOKEN }}
+
+      run: |
+
+        mkdir -p exported_gold
+
+        NOTEBOOKS=(
+          "01.Build Races Dimension"
+          "02.Build Constructors Dimension"
+          "03.Build Drivers Dimension"
+          "04.Build Results Fact"
+        )
+
+        for NOTEBOOK in "${NOTEBOOKS[@]}"; do
+
+          echo "========================================"
+          echo "Exportando: $NOTEBOOK"
+          echo "========================================"
+
+          ENCODED_PATH=$(python -c "import urllib.parse; print(urllib.parse.quote('/Workspace/Users/fcamifox@gmail.com/proyecto_final_formula1/proceso/03-gold/$NOTEBOOK', safe=''))")
+
+          curl -f -sS \
+            -X GET \
+            -H "Authorization: Bearer $DATABRICKS_TOKEN" \
+            "$DATABRICKS_HOST/api/2.0/workspace/export?path=$ENCODED_PATH&format=SOURCE" \
+            > "exported_silver/${NOTEBOOK}.json"
+
+          echo "Validando JSON..."
+
+          jq empty "exported_gol/${NOTEBOOK}.json"
+
+          echo "Contenido exportado:"
+          jq -r '.content' "exported_gold/${NOTEBOOK}.json" | wc -c
+
+          echo "OK: $NOTEBOOK"
+
+        done
+        
+    - name: Importar notebooks Golden
+      env:
+        DATABRICKS_HOST: ${{ secrets.DATABRICKS_DEST_HOST }}
+        DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_DEST_TOKEN }}
+
+      run: |
+
+        DEST_PATH="/Workspace/Users/fcamifox@gmail.com/proyecto_final_formula1/proceso/03-gold"
+
+        echo "========================================"
+        echo "IMPORTANDO NOTEBOOKS GOLDEN"
+        echo "========================================"
+
+        for FILE in exported_gold/*.json; do
+
+          NOTEBOOK=$(basename "$FILE" .json)
+
+          echo ""
+          echo "========================================"
+          echo "Importando: $NOTEBOOK"
+          echo "========================================"
+
+          CONTENT=$(jq -r '.content' "$FILE")
+
+          if [ -z "$CONTENT" ] || [ "$CONTENT" = "null" ]; then
+            echo "ERROR: El archivo no contiene content"
+            exit 1
+          fi
+
+          RESPONSE=$(curl -sS \
+            -w "\n%{http_code}" \
+            -X POST \
+            -H "Authorization: Bearer $DATABRICKS_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"path\": \"$DEST_PATH/$NOTEBOOK\",
+              \"format\": \"SOURCE\",
+              \"language\": \"PYTHON\",
+              \"content\": \"$CONTENT\",
+              \"overwrite\": true
+            }" \
+            "$DATABRICKS_HOST/api/2.0/workspace/import")
+
+          HTTP_CODE=$(echo "$RESPONSE" | tail -n 1)
+          BODY=$(echo "$RESPONSE" | sed '$d')
+
+          echo "HTTP CODE = $HTTP_CODE"
+          echo "Respuesta:"
+          echo "$BODY"
+
+          if [ "$HTTP_CODE" != "200" ]; then
+            echo "ERROR importando $NOTEBOOK"
+            exit 1
+          fi
+
+          echo "OK: $NOTEBOOK"
+
+        done
+      
+  
+
     # ============================================================
     # 8. CREAR EXTERNAL LOCATION METASTORE
     # ============================================================
