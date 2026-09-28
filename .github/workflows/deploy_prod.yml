@@ -251,7 +251,7 @@ jobs:
 
       run: |
 
-        mkdir -p exported_bronze
+        mkdir -p exported_silver
 
         NOTEBOOKS=(
           "01.Transform Circuits Data"
@@ -273,7 +273,7 @@ jobs:
             -X GET \
             -H "Authorization: Bearer $DATABRICKS_TOKEN" \
             "$DATABRICKS_HOST/api/2.0/workspace/export?path=$ENCODED_PATH&format=DBC" \
-            > "exported_bronze/${NOTEBOOK}.json"
+            > "exported_silver/${NOTEBOOK}.json"
 
           echo "OK: $NOTEBOOK"
 
@@ -292,7 +292,7 @@ jobs:
 
         DEST_PATH="/Workspace/Users/fcamifox@gmail.com/proyecto_final_formula1/proceso/02-Silver"
 
-        for FILE in exported_bronze/*.json; do
+        for FILE in exported_silver/*.json; do
 
           NOTEBOOK=$(basename "$FILE" .json)
 
