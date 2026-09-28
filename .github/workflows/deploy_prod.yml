@@ -989,7 +989,57 @@ jobs:
               },
 
               "environment_key": "Default"
+            },
+
+            {
+              "task_key": "03_Build_Drivers_Dimension",
+
+              "depends_on": [
+                {
+                  "task_key": "04_Transform_Drivers_Data"
+                }
+                
+              ],
+
+              "notebook_task": {
+                "notebook_path": "/Workspace/Users/fcamifox@gmail.com/proyecto_final_formula1/proceso/03-gold/03.Build Drivers Dimension",
+                "source": "WORKSPACE",
+
+                "base_parameters": {
+                  "storageName": "$STORAGE_NAME",
+                  "catalogo": "$CATALOG"
+                }
+              },
+
+              "environment_key": "Default"
+            },
+
+            {
+              "task_key": "04_Build Results Fact",
+
+              "depends_on": [
+                {
+                  "task_key": "06_Transform_Sprints_Data"
+                },
+                {
+                  "task_key": "05_Transform_Results_Data"
+                }
+                
+              ],
+
+              "notebook_task": {
+                "notebook_path": "/Workspace/Users/fcamifox@gmail.com/proyecto_final_formula1/proceso/03-gold/04.Build Results Fact",
+                "source": "WORKSPACE",
+
+                "base_parameters": {
+                  "storageName": "$STORAGE_NAME",
+                  "catalogo": "$CATALOG"
+                }
+              },
+
+              "environment_key": "Default"
             }
+          
 
           ],
 
