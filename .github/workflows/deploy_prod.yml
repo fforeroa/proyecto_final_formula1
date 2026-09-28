@@ -1348,10 +1348,10 @@ jobs:
     - name: Apuntar el dashboard a prod
       run: |
           # Reemplaza las referencias de desarrollo (formula1.) por las de producción (formula1_prod.)
-          sed -i 's/formula1\./formula1_prod./g' src/jpmontoya.lvdash.json
+          sed -i 's/formula1\./formula1_prod./g' /Workspace/Users/fcamifox@gmail.com/proyecto_final_formula1/dashboard_formula1/src/jpmontoya.lvdash.json
             
           # Valida que el reemplazo se haya realizado con éxito
-          grep -q "formula1_prod\." src/jpmontoya.lvdash.json || { echo "No se reemplazó nada"; exit 1; }
+          grep -q "formula1_prod\." /Workspace/Users/fcamifox@gmail.com/proyecto_final_formula1/dashboard_formula1/src/jpmontoya.lvdash.json || { echo "No se reemplazó nada"; exit 1; }
             
     - name: Validar bundle
       run: |
