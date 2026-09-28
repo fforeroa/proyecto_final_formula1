@@ -239,7 +239,82 @@ jobs:
           echo "OK: $NOTEBOOK"
 
         done
+      
+    # ============================================================
+    #  EXPORTAR NOTEBOOKS SILVER
+    # ============================================================
 
+    - name: Exportar notebooks Silver
+      env:
+        DATABRICKS_HOST: ${{ secrets.DATABRICKS_ORIGIN_HOST }}
+        DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_ORIGIN_TOKEN }}
+
+      run: |
+
+        mkdir -p exported_bronze
+
+        NOTEBOOKS=(
+          "01.Transform Circuits Data"
+          "02.Transform Races Data"
+          "03.Transform Constructors Data"
+          "04.Transform Drivers Data"
+          "05.Transform Results Data"
+          "06.Transform Sprints Data"
+          "91.Build_Nationality_Region_Reference"
+        )
+
+        for NOTEBOOK in "${NOTEBOOKS[@]}"; do
+
+          echo "Exportando: $NOTEBOOK"
+
+          ENCODED_PATH=$(python -c "import urllib.parse; print(urllib.parse.quote('/Workspace/Users/fcamifox@gmail.com/proyecto_final_formula1/proceso/02-Silver/$NOTEBOOK', safe=''))")
+
+          curl -f -s \
+            -X GET \
+            -H "Authorization: Bearer $DATABRICKS_TOKEN" \
+            "$DATABRICKS_HOST/api/2.0/workspace/export?path=$ENCODED_PATH&format=DBC" \
+            > "exported_bronze/${NOTEBOOK}.json"
+
+          echo "OK: $NOTEBOOK"
+
+        done
+
+    # ============================================================
+    #  IMPORTAR NOTEBOOKS SILVER
+    # ============================================================
+
+    - name: Importar notebooks Silver
+      env:
+        DATABRICKS_HOST: ${{ secrets.DATABRICKS_DEST_HOST }}
+        DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_DEST_TOKEN }}
+
+      run: |
+
+        DEST_PATH="/Workspace/Users/fcamifox@gmail.com/proyecto_final_formula1/proceso/02-Silver"
+
+        for FILE in exported_bronze/*.json; do
+
+          NOTEBOOK=$(basename "$FILE" .json)
+
+          echo "Importando: $NOTEBOOK"
+
+          CONTENT=$(jq -r '.content' "$FILE")
+
+          curl -f -sS \
+            -X POST \
+            -H "Authorization: Bearer $DATABRICKS_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"path\": \"$DEST_PATH/$NOTEBOOK\",
+              \"format\": \"DBC\",
+              \"content\": \"$CONTENT\",
+              \"overwrite\": true
+            }" \
+            "$DATABRICKS_HOST/api/2.0/workspace/import"
+
+          echo "OK: $NOTEBOOK"
+
+        done
 
     # ============================================================
     # 8. CREAR EXTERNAL LOCATION METASTORE
@@ -383,7 +458,7 @@ jobs:
         create_schema "gold" "golden"
   
     
-    - name: Crear Job Formula1 PROD
+    - name: Crear o actualizar Job Formula1 PROD
       env:
         DATABRICKS_HOST: ${{ secrets.DATABRICKS_DEST_HOST }}
         DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_DEST_TOKEN }}
@@ -402,7 +477,6 @@ jobs:
           "tasks": [
             {
               "task_key": "01_Ingest_Circuits_File",
-
               "notebook_task": {
                 "notebook_path": "/Workspace/Users/fcamifox@gmail.com/proyecto_final_formula1/proceso/01-Bronze/01.Ingest Circuits File",
                 "source": "WORKSPACE",
@@ -411,7 +485,6 @@ jobs:
                   "catalogo": "$CATALOG"
                 }
               },
-
               "environment_key": "Default"
             },
 
@@ -425,7 +498,7 @@ jobs:
               ],
 
               "notebook_task": {
-                "notebook_path": "/Workspace/Users/fcamifox@gmail.com/proyecto_final_formula1/proceso/01-Bronze/01.Transform Circuits Data",
+                "notebook_path": "/Workspace/Users/fcamifox@gmail.com/proyecto_final_formula1/proceso/02-Silver/01.Transform Circuits Data",
                 "source": "WORKSPACE",
                 "base_parameters": {
                   "storageName": "$STORAGE_NAME",
@@ -446,33 +519,73 @@ jobs:
             }
           ],
 
+          "queue": {
+            "enabled": true
+          },
+
           "performance_target": "PERFORMANCE_OPTIMIZED"
         }
         EOF
 
         echo "========================================"
-        echo "JOB CONFIG"
+        echo "BUSCANDO JOB EXISTENTE"
         echo "========================================"
 
-        cat job_config.json
-
-        echo "========================================"
-        echo "CREANDO JOB"
-        echo "========================================"
-
-        RESPONSE=$(curl -f -sS \
-          -X POST \
+        JOBS_RESPONSE=$(curl -f -sS \
+          -X GET \
           -H "Authorization: Bearer $DATABRICKS_TOKEN" \
-          -H "Content-Type: application/json" \
-          -d @job_config.json \
-          "$DATABRICKS_HOST/api/2.2/jobs/create")
+          "$DATABRICKS_HOST/api/2.1/jobs/list?limit=100")
 
-        echo "Respuesta creación Job:"
-        echo "$RESPONSE" | jq .
+        JOB_ID=$(echo "$JOBS_RESPONSE" | jq -r \
+          '.jobs[] | select(.settings.name=="Job_Formula_1") | .job_id' | head -n 1)
 
-        JOB_ID=$(echo "$RESPONSE" | jq -r '.job_id')
+        echo "JOB_ID ENCONTRADO = $JOB_ID"
 
-        echo "JOB_ID=$JOB_ID"
+        if [ -z "$JOB_ID" ]; then
+
+          echo "========================================"
+          echo "EL JOB NO EXISTE"
+          echo "CREANDO JOB..."
+          echo "========================================"
+
+          RESPONSE=$(curl -f -sS \
+            -X POST \
+            -H "Authorization: Bearer $DATABRICKS_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d @job_config.json \
+            "$DATABRICKS_HOST/api/2.1/jobs/create")
+
+          echo "$RESPONSE" | jq .
+
+          JOB_ID=$(echo "$RESPONSE" | jq -r '.job_id')
+
+        else
+
+          echo "========================================"
+          echo "EL JOB YA EXISTE"
+          echo "ACTUALIZANDO JOB..."
+          echo "JOB_ID=$JOB_ID"
+          echo "========================================"
+
+          RESET_RESPONSE=$(jq \
+            --argjson job_id "$JOB_ID" \
+            '{job_id: $job_id, new_settings: .}' \
+            job_config.json | \
+            curl -f -sS \
+            -X POST \
+            -H "Authorization: Bearer $DATABRICKS_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d @- \
+            "$DATABRICKS_HOST/api/2.1/jobs/reset")
+
+          echo "Respuesta actualización:"
+          echo "$RESET_RESPONSE" | jq .
+
+        fi
+
+        echo "========================================"
+        echo "JOB_ID FINAL = $JOB_ID"
+        echo "========================================"
 
         if [ "$JOB_ID" = "null" ] || [ -z "$JOB_ID" ]; then
           echo "ERROR: No se pudo obtener JOB_ID"
@@ -481,10 +594,7 @@ jobs:
 
         echo "JOB_ID=$JOB_ID" >> $GITHUB_ENV
 
-        echo "========================================"
-        echo "JOB CREADO CORRECTAMENTE"
-        echo "JOB_ID=$JOB_ID"
-        echo "========================================"
+        echo "Job listo correctamente."
 
     - name: Ejecutar Job Formula1 PROD
       env:
