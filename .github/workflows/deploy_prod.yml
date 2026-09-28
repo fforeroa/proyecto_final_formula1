@@ -471,7 +471,7 @@ jobs:
 
           echo "Validando JSON..."
 
-          jq empty "exported_gol/${NOTEBOOK}.json"
+          jq empty "exported_gold/${NOTEBOOK}.json"
 
           echo "Contenido exportado:"
           jq -r '.content' "exported_gold/${NOTEBOOK}.json" | wc -c
