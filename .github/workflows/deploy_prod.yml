@@ -146,7 +146,7 @@ jobs:
           "02.Ayuda_Bronze"
           "03.Configuracion_Ambiente"
           "04.Ayuda_Silver"
-          "test"
+          "prueba"
         )
 
         for NOTEBOOK in "${NOTEBOOKS[@]}"; do
