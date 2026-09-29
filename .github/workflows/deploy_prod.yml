@@ -1373,3 +1373,29 @@ jobs:
       run: |
             cd dashboard_formula1
             databricks bundle deploy -t prod
+
+groups:
+  analistas_prod_group:
+    display_name: "analistas_prod"
+    members:
+      - user_name: "fabianforero@sqdm.com"
+      - user_name: "fcamifox@hotmail.com" # Añadido el usuario anterior por si lo requieres en el grupo
+
+grants:
+  # 1. Permiso general para poder "entrar" y ver el catálogo
+  catalog_prod_usage_access:
+    catalog: "formula1_prod"
+    grants:
+      - principal: "analistas_prod"
+        privileges:
+          - USAGE
+
+  # 2. Permiso específico de lectura restringido solo al esquema gold
+  schema_gold_read_access:
+    catalog: "formula1_prod"
+    schema: "gold" # Añadimos la propiedad de esquema para aislar el SELECT
+    grants:
+      - principal: "analistas_prod"
+        privileges:
+          - USE SCHEMA # Requerido en Unity Catalog para interactuar con el esquema
+          - SELECT     # Permiso de solo lectura para las tablas/vistas del esquema gold
