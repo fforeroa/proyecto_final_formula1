@@ -1369,33 +1369,194 @@ jobs:
       env:
         DATABRICKS_HOST: ${{ secrets.DATABRICKS_DEST_HOST }}
         DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_DEST_TOKEN }}
-
       run: |
             cd dashboard_formula1
             databricks bundle deploy -t prod
 
-groups:
-  analistas_prod_group:
-    display_name: "analistas_prod"
-    members:
-      - user_name: "fabianforero@sqdm.com"
-      - user_name: "fcamifox@hotmail.com" # Añadido el usuario anterior por si lo requieres en el grupo
+# ============================================================
+# CREAR GRUPO ANALISTAS_PROD SI NO EXISTE
+# ============================================================
 
-grants:
-  # 1. Permiso general para poder "entrar" y ver el catálogo
-  catalog_prod_usage_access:
-    catalog: "formula1_prod"
-    grants:
-      - principal: "analistas_prod"
-        privileges:
-          - USAGE
+    - name: Crear grupo analistas_prod
+      env:
+        DATABRICKS_HOST: ${{ secrets.DATABRICKS_DEST_HOST }}
+        DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_DEST_TOKEN }}
 
-  # 2. Permiso específico de lectura restringido solo al esquema gold
-  schema_gold_read_access:
-    catalog: "formula1_prod"
-    schema: "gold" # Añadimos la propiedad de esquema para aislar el SELECT
-    grants:
-      - principal: "analistas_prod"
-        privileges:
-          - USE SCHEMA # Requerido en Unity Catalog para interactuar con el esquema
-          - SELECT     # Permiso de solo lectura para las tablas/vistas del esquema gold
+      run: |
+
+        echo "========================================"
+        echo "VALIDANDO GRUPO ANALISTAS_PROD"
+        echo "========================================"
+
+        GROUP_NAME="analistas_prod"
+
+        GROUP_RESPONSE=$(curl -sS \
+          -X GET \
+          -H "Authorization: Bearer $DATABRICKS_TOKEN" \
+          "$DATABRICKS_HOST/api/2.0/account/scim/v2/Groups?filter=displayName%20eq%20%22$GROUP_NAME%22")
+
+        GROUP_ID=$(echo "$GROUP_RESPONSE" | jq -r '.Resources[0].id')
+
+        if [ -z "$GROUP_ID" ] || [ "$GROUP_ID" = "null" ]; then
+
+          echo "El grupo $GROUP_NAME no existe."
+          echo "Creando grupo..."
+
+          CREATE_RESPONSE=$(curl -f -sS \
+            -X POST \
+            -H "Authorization: Bearer $DATABRICKS_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"schemas\": [
+                \"urn:ietf:params:scim:schemas:core:2.0:Group\"
+              ],
+              \"displayName\": \"$GROUP_NAME\"
+            }" \
+            "$DATABRICKS_HOST/api/2.0/account/scim/v2/Groups")
+
+          echo "$CREATE_RESPONSE" | jq .
+
+          GROUP_ID=$(echo "$CREATE_RESPONSE" | jq -r '.id')
+
+          if [ -z "$GROUP_ID" ] || [ "$GROUP_ID" = "null" ]; then
+            echo "ERROR: No se pudo crear el grupo $GROUP_NAME"
+            exit 1
+          fi
+
+          echo "Grupo creado correctamente."
+          echo "GROUP_ID=$GROUP_ID"
+
+        else
+
+          echo "El grupo $GROUP_NAME ya existe."
+          echo "GROUP_ID=$GROUP_ID"
+
+        fi
+
+    # ============================================================
+    # ASIGNAR USUARIOS AL GRUPO ANALISTAS_PROD
+    # ============================================================
+
+    - name: Asignar usuarios al grupo analistas_prod
+      env:
+        DATABRICKS_HOST: ${{ secrets.DATABRICKS_DEST_HOST }}
+        DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_DEST_TOKEN }}
+
+      run: |
+
+        echo "========================================"
+        echo "ASIGNANDO USUARIOS AL GRUPO"
+        echo "========================================"
+
+        GROUP_NAME="analistas_prod"
+
+        # --------------------------------------------------------
+        # OBTENER ID DEL GRUPO
+        # --------------------------------------------------------
+
+        GROUP_RESPONSE=$(curl -sS \
+          -X GET \
+          -H "Authorization: Bearer $DATABRICKS_TOKEN" \
+          "$DATABRICKS_HOST/api/2.0/account/scim/v2/Groups?filter=displayName%20eq%20%22$GROUP_NAME%22")
+
+        echo "Respuesta grupo:"
+        echo "$GROUP_RESPONSE" | jq .
+
+        GROUP_ID=$(echo "$GROUP_RESPONSE" | jq -r '.Resources[0].id')
+
+        if [ -z "$GROUP_ID" ] || [ "$GROUP_ID" = "null" ]; then
+          echo "ERROR: No se encontró el grupo $GROUP_NAME"
+          exit 1
+        fi
+
+        echo "GROUP_ID=$GROUP_ID"
+
+        # --------------------------------------------------------
+        # BUSCAR USUARIO 1
+        # --------------------------------------------------------
+
+        USER_RESPONSE=$(curl -sS \
+          -X GET \
+          -H "Authorization: Bearer $DATABRICKS_TOKEN" \
+          "$DATABRICKS_HOST/api/2.0/account/scim/v2/Users?filter=userName%20eq%20%22fabianforero@sqdm.com%22")
+
+        USER_ID=$(echo "$USER_RESPONSE" | jq -r '.Resources[0].id')
+
+        if [ -z "$USER_ID" ] || [ "$USER_ID" = "null" ]; then
+          echo "ERROR: No se encontró fabianforero@sqdm.com"
+          exit 1
+        fi
+
+        echo "Agregando fabianforero@sqdm.com..."
+
+        curl -f -sS \
+          -X PATCH \
+          -H "Authorization: Bearer $DATABRICKS_TOKEN" \
+          -H "Content-Type: application/json" \
+          -d "{
+            \"schemas\": [
+              \"urn:ietf:params:scim:api:messages:2.0:PatchOp\"
+            ],
+            \"Operations\": [
+              {
+                \"op\": \"add\",
+                \"value\": {
+                  \"members\": [
+                    {
+                      \"value\": \"$USER_ID\"
+                    }
+                  ]
+                }
+              }
+            ]
+          }" \
+          "$DATABRICKS_HOST/api/2.0/account/scim/v2/Groups/$GROUP_ID"
+
+        echo "OK: fabianforero@sqdm.com"
+
+        # --------------------------------------------------------
+        # BUSCAR USUARIO 2
+        # --------------------------------------------------------
+
+        USER_RESPONSE=$(curl -sS \
+          -X GET \
+          -H "Authorization: Bearer $DATABRICKS_TOKEN" \
+          "$DATABRICKS_HOST/api/2.0/account/scim/v2/Users?filter=userName%20eq%20%22fcamifox@hotmail.com%22")
+
+        USER_ID=$(echo "$USER_RESPONSE" | jq -r '.Resources[0].id')
+
+        if [ -z "$USER_ID" ] || [ "$USER_ID" = "null" ]; then
+          echo "ERROR: No se encontró fcamifox@hotmail.com"
+          exit 1
+        fi
+
+        echo "Agregando fcamifox@hotmail.com..."
+
+        curl -f -sS \
+          -X PATCH \
+          -H "Authorization: Bearer $DATABRICKS_TOKEN" \
+          -H "Content-Type: application/json" \
+          -d "{
+            \"schemas\": [
+              \"urn:ietf:params:scim:api:messages:2.0:PatchOp\"
+            ],
+            \"Operations\": [
+              {
+                \"op\": \"add\",
+                \"value\": {
+                  \"members\": [
+                    {
+                      \"value\": \"$USER_ID\"
+                    }
+                  ]
+                }
+              }
+            ]
+          }" \
+          "$DATABRICKS_HOST/api/2.0/account/scim/v2/Groups/$GROUP_ID"
+
+        echo "OK: fcamifox@hotmail.com"
+
+        echo "========================================"
+        echo "USUARIOS ASIGNADOS CORRECTAMENTE"
+        echo "========================================"
