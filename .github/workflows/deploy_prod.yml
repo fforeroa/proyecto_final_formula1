@@ -93,6 +93,7 @@ jobs:
           "/Workspace/Users/fcamifox@gmail.com/proyecto_final_formula1/proceso/01-Bronze"
           "/Workspace/Users/fcamifox@gmail.com/proyecto_final_formula1/proceso/02-Silver"
           "/Workspace/Users/fcamifox@gmail.com/proyecto_final_formula1/proceso/03-gold"
+          "/Workspace/Users/fcamifox@gmail.com/proyecto_final_formula1/proceso/seguridad"
         )
 
         for FOLDER in "${FOLDERS[@]}"; do
@@ -1497,7 +1498,7 @@ jobs:
 # CREAR GRUPO INFRA_PROD SI NO EXISTE
 # ============================================================
 
-    - name: Crear grupo soporte_prod
+    - name: Crear grupo infra_prod
       env:
         DATABRICKS_HOST: ${{ secrets.DATABRICKS_DEST_HOST }}
         DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_DEST_TOKEN }}
@@ -1505,7 +1506,7 @@ jobs:
       run: |
 
         echo "========================================"
-        echo "VALIDANDO GRUPO SOPORTE_PROD"
+        echo "VALIDANDO GRUPO INFRA_PROD"
         echo "========================================"
 
         GROUP_NAME="infra_prod"
@@ -1551,4 +1552,211 @@ jobs:
           echo "El grupo $GROUP_NAME ya existe."
           echo "GROUP_ID=$GROUP_ID"
 
+        fi
+
+# ============================================================
+    # 4. EXPORTAR NOTEBOOKS PREP DESDE DEV
+    # ============================================================
+
+    - name: Exportar notebooks GRANTS
+      env:
+        DATABRICKS_HOST: ${{ secrets.DATABRICKS_ORIGIN_HOST }}
+        DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_ORIGIN_TOKEN }}
+
+      run: |
+
+        mkdir -p exported_grants
+
+        NOTEBOOKS=(
+          "01.grants"
+        )
+
+        for NOTEBOOK in "${NOTEBOOKS[@]}"; do
+
+          echo "Exportando: $NOTEBOOK"
+
+          ENCODED_PATH=$(python -c "import urllib.parse; print(urllib.parse.quote('/Workspace/Users/fcamifox@gmail.com/proyecto_final_formula1/seguridad/$NOTEBOOK', safe=''))")
+
+          curl -f -s \
+            -X GET \
+            -H "Authorization: Bearer $DATABRICKS_TOKEN" \
+            "$DATABRICKS_HOST/api/2.0/workspace/export?path=$ENCODED_PATH&format=DBC" \
+            > "exported_grants/${NOTEBOOK}.json"
+
+          echo "OK: $NOTEBOOK"
+
+        done
+
+    - name: Importar notebooks grants
+      env:
+        DATABRICKS_HOST: ${{ secrets.DATABRICKS_DEST_HOST }}
+        DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_DEST_TOKEN }}
+
+      run: |
+
+        DEST_PATH="/Workspace/Users/fcamifox@gmail.com/proyecto_final_formula1/seguridad"
+        echo "Creando directorio:"
+        echo "$DEST_PATH"
+
+        curl -f -sS \
+          -X POST \
+          -H "Authorization: Bearer $DATABRICKS_TOKEN" \
+          -H "Content-Type: application/json" \
+          -d "{
+            \"path\": \"$DEST_PATH\",
+            \"overwrite\": true
+          }" \
+           "$DATABRICKS_HOST/api/2.0/workspace/mkdirs"
+        
+        echo "Directorio creado o ya existente"
+
+        for FILE in exported_grants/*.json; do
+
+          NOTEBOOK=$(basename "$FILE" .json)
+
+          echo "Importando: $NOTEBOOK"
+
+          CONTENT=$(jq -r '.content' "$FILE")
+
+          curl -f -s \
+            -X POST \
+            -H "Authorization: Bearer $DATABRICKS_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"path\": \"$DEST_PATH/$NOTEBOOK\",
+              \"format\": \"DBC\",
+              \"content\": \"$CONTENT\",
+              \"overwrite\": true
+            }" \
+            "$DATABRICKS_HOST/api/2.0/workspace/import"
+
+          echo "OK: $NOTEBOOK"
+
+        done
+
+    - name: Ejecutar grants PRODUCCION
+      env:
+        DATABRICKS_HOST: ${{ secrets.DATABRICKS_DEST_HOST }}
+        DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_DEST_TOKEN }}
+
+      run: |
+
+        NOTEBOOK_PATH="/Workspace/Users/fcamifox@gmail.com/proyecto_final_formula1/seguridad/01.grants"
+
+        cat <<EOF > run_config.json
+        {
+          "run_name": "Formula1 - Grants PROD",
+          "tasks": [
+            {
+              "task_key": "ingest_circuits",
+              "notebook_task": {
+                "notebook_path": "$NOTEBOOK_PATH",
+                "source": "WORKSPACE",
+                "base_parameters": {
+                  "catalogo": "$CATALOG"
+                }
+              }
+            }
+          ]
+        }
+        EOF
+
+        echo "========================================"
+        echo "CONFIGURACION DEL JOB"
+        echo "========================================"
+        cat run_config.json
+        echo "========================================"
+
+
+        # ------------------------------------------------------------
+        # INICIAR RUN
+        # ------------------------------------------------------------
+
+        RESPONSE=$(curl -f -sS \
+          -X POST \
+          -H "Authorization: Bearer $DATABRICKS_TOKEN" \
+          -H "Content-Type: application/json" \
+          -d @run_config.json \
+          "$DATABRICKS_HOST/api/2.1/jobs/runs/submit")
+
+        echo "Respuesta:"
+        echo "$RESPONSE"
+
+        RUN_ID=$(echo "$RESPONSE" | jq -r '.run_id')
+
+        echo "========================================"
+        echo "RUN_ID = $RUN_ID"
+        echo "========================================"
+
+
+        if [ "$RUN_ID" = "null" ] || [ -z "$RUN_ID" ]; then
+          echo "ERROR: No se pudo iniciar el Job"
+          exit 1
+        fi
+
+
+        # ------------------------------------------------------------
+        # ESPERAR A QUE TERMINE
+        # ------------------------------------------------------------
+
+        echo "Esperando ejecucion del notebook..."
+
+        while true; do
+
+          RUN_STATUS=$(curl -f -sS \
+            -X GET \
+            -H "Authorization: Bearer $DATABRICKS_TOKEN" \
+            "$DATABRICKS_HOST/api/2.1/jobs/runs/get?run_id=$RUN_ID")
+
+          LIFE_CYCLE=$(echo "$RUN_STATUS" | jq -r '.state.life_cycle_state')
+          RESULT_STATE=$(echo "$RUN_STATUS" | jq -r '.state.result_state')
+          STATE_MESSAGE=$(echo "$RUN_STATUS" | jq -r '.state.state_message')
+
+          echo ""
+          echo "----------------------------------------"
+          echo "Life Cycle : $LIFE_CYCLE"
+          echo "Result     : $RESULT_STATE"
+          echo "Message    : $STATE_MESSAGE"
+          echo "----------------------------------------"
+
+          if [ "$LIFE_CYCLE" = "TERMINATED" ] || \
+            [ "$LIFE_CYCLE" = "SKIPPED" ] || \
+            [ "$LIFE_CYCLE" = "INTERNAL_ERROR" ]; then
+            break
+          fi
+
+          sleep 10
+
+        done
+
+
+        # ------------------------------------------------------------
+        # MOSTRAR RESULTADO
+        # ------------------------------------------------------------
+
+        echo ""
+        echo "========================================"
+        echo "RESULTADO FINAL"
+        echo "========================================"
+
+        echo "$RUN_STATUS" | jq .
+
+
+        # ------------------------------------------------------------
+        # OBTENER OUTPUT DEL NOTEBOOK
+        # ------------------------------------------------------------
+
+        echo ""
+        echo "========================================"
+        echo "BUSCANDO OUTPUT DE LA TAREA"
+        echo "========================================"
+
+        TASK_RUN_ID=$(echo "$RUN_STATUS" | jq -r \
+          '.tasks[] | select(.task_key=="ingest_circuits") | .run_id' | tail -1)
+
+        echo "TASK_RUN_ID = $TASK_RUN_ID"
+
+        if [ "$TASK_RUN_ID" = "null" ] || [ -z "$TASK_RUN_ID" ]; then
+          echo "ERROR: No se encontró el run_id de la tarea ingest_circuits"
+          exit 1
         fi
