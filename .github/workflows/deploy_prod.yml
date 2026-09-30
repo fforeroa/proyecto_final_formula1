@@ -1492,3 +1492,63 @@ jobs:
           echo "GROUP_ID=$GROUP_ID"
 
         fi
+
+# ============================================================
+# CREAR GRUPO INFRA_PROD SI NO EXISTE
+# ============================================================
+
+    - name: Crear grupo soporte_prod
+      env:
+        DATABRICKS_HOST: ${{ secrets.DATABRICKS_DEST_HOST }}
+        DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_DEST_TOKEN }}
+
+      run: |
+
+        echo "========================================"
+        echo "VALIDANDO GRUPO SOPORTE_PROD"
+        echo "========================================"
+
+        GROUP_NAME="infra_prod"
+
+        GROUP_RESPONSE=$(curl -sS \
+          -X GET \
+          -H "Authorization: Bearer $DATABRICKS_TOKEN" \
+          "$DATABRICKS_HOST/api/2.0/account/scim/v2/Groups?filter=displayName%20eq%20%22$GROUP_NAME%22")
+
+        GROUP_ID=$(echo "$GROUP_RESPONSE" | jq -r '.Resources[0].id')
+
+        if [ -z "$GROUP_ID" ] || [ "$GROUP_ID" = "null" ]; then
+
+          echo "El grupo $GROUP_NAME no existe."
+          echo "Creando grupo..."
+
+          CREATE_RESPONSE=$(curl -f -sS \
+            -X POST \
+            -H "Authorization: Bearer $DATABRICKS_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"schemas\": [
+                \"urn:ietf:params:scim:schemas:core:2.0:Group\"
+              ],
+              \"displayName\": \"$GROUP_NAME\"
+            }" \
+            "$DATABRICKS_HOST/api/2.0/account/scim/v2/Groups")
+
+          echo "$CREATE_RESPONSE" | jq .
+
+          GROUP_ID=$(echo "$CREATE_RESPONSE" | jq -r '.id')
+
+          if [ -z "$GROUP_ID" ] || [ "$GROUP_ID" = "null" ]; then
+            echo "ERROR: No se pudo crear el grupo $GROUP_NAME"
+            exit 1
+          fi
+
+          echo "Grupo creado correctamente."
+          echo "GROUP_ID=$GROUP_ID"
+
+        else
+
+          echo "El grupo $GROUP_NAME ya existe."
+          echo "GROUP_ID=$GROUP_ID"
+
+        fi
