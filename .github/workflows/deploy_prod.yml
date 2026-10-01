@@ -1784,7 +1784,7 @@ jobs:
             -X GET \
             -H "Authorization: Bearer $DATABRICKS_TOKEN" \
             "$DATABRICKS_HOST/api/2.0/workspace/export?path=$ENCODED_PATH&format=DBC" \
-            > "exported_grants/${NOTEBOOK}.json"
+            > "exported_reversa/${NOTEBOOK}.json"
 
           echo "OK: $NOTEBOOK"
 
