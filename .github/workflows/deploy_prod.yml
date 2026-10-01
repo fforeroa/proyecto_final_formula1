@@ -1554,7 +1554,7 @@ jobs:
 
         fi
 
-# ============================================================
+    # ============================================================
     # 4. EXPORTAR NOTEBOOKS PREP DESDE DEV
     # ============================================================
 
@@ -1648,7 +1648,7 @@ jobs:
           "run_name": "Formula1 - Grants PROD",
           "tasks": [
             {
-              "task_key": "ingest_circuits",
+              "task_key": "ingest_grants",
               "notebook_task": {
                 "notebook_path": "$NOTEBOOK_PATH",
                 "source": "WORKSPACE",
@@ -1752,11 +1752,87 @@ jobs:
         echo "========================================"
 
         TASK_RUN_ID=$(echo "$RUN_STATUS" | jq -r \
-          '.tasks[] | select(.task_key=="ingest_circuits") | .run_id' | tail -1)
+          '.tasks[] | select(.task_key=="ingest_grants") | .run_id' | tail -1)
 
         echo "TASK_RUN_ID = $TASK_RUN_ID"
 
         if [ "$TASK_RUN_ID" = "null" ] || [ -z "$TASK_RUN_ID" ]; then
-          echo "ERROR: No se encontró el run_id de la tarea ingest_circuits"
+          echo "ERROR: No se encontró el run_id de la tarea grants"
           exit 1
         fi
+
+    - name: Exportar notebooks reversa
+      env:
+        DATABRICKS_HOST: ${{ secrets.DATABRICKS_ORIGIN_HOST }}
+        DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_ORIGIN_TOKEN }}
+
+      run: |
+
+        mkdir -p exported_reversa
+
+        NOTEBOOKS=(
+          "01.Reversa"
+        )
+
+        for NOTEBOOK in "${NOTEBOOKS[@]}"; do
+
+          echo "Exportando: $NOTEBOOK"
+
+          ENCODED_PATH=$(python -c "import urllib.parse; print(urllib.parse.quote('/Workspace/Users/fcamifox@gmail.com/proyecto_final_formula1/Reversion/$NOTEBOOK', safe=''))")
+
+          curl -f -s \
+            -X GET \
+            -H "Authorization: Bearer $DATABRICKS_TOKEN" \
+            "$DATABRICKS_HOST/api/2.0/workspace/export?path=$ENCODED_PATH&format=DBC" \
+            > "exported_grants/${NOTEBOOK}.json"
+
+          echo "OK: $NOTEBOOK"
+
+        done
+
+    - name: Importar notebooks reversa
+      env:
+        DATABRICKS_HOST: ${{ secrets.DATABRICKS_DEST_HOST }}
+        DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_DEST_TOKEN }}
+
+      run: |
+
+        DEST_PATH="/Workspace/Users/fcamifox@gmail.com/proyecto_final_formula1/Reversion"
+        echo "Creando directorio:"
+        echo "$DEST_PATH"
+
+        curl -f -sS \
+          -X POST \
+          -H "Authorization: Bearer $DATABRICKS_TOKEN" \
+          -H "Content-Type: application/json" \
+          -d "{
+            \"path\": \"$DEST_PATH\",
+            \"overwrite\": true
+          }" \
+           "$DATABRICKS_HOST/api/2.0/workspace/mkdirs"
+        
+        echo "Directorio creado o ya existente"
+
+        for FILE in exported_reversa/*.json; do
+
+          NOTEBOOK=$(basename "$FILE" .json)
+
+          echo "Importando: $NOTEBOOK"
+
+          CONTENT=$(jq -r '.content' "$FILE")
+
+          curl -f -s \
+            -X POST \
+            -H "Authorization: Bearer $DATABRICKS_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"path\": \"$DEST_PATH/$NOTEBOOK\",
+              \"format\": \"DBC\",
+              \"content\": \"$CONTENT\",
+              \"overwrite\": true
+            }" \
+            "$DATABRICKS_HOST/api/2.0/workspace/import"
+
+          echo "OK: $NOTEBOOK"
+
+        done
