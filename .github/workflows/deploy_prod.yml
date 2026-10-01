@@ -1776,9 +1776,8 @@ jobs:
 
         for NOTEBOOK in "${NOTEBOOKS[@]}"; do
 
-          echo "Exportando: $NOTEBOOK"
-
-          ENCODED_PATH=$(python -c "import urllib.parse; print(urllib.parse.quote('/Workspace/Users/fcamifox@gmail.com/proyecto_final_formula1/Reversion/$NOTEBOOK', safe=''))")
+          echo "Exportando: $NOTEBOOK"         
+          ENCODED_PATH=$(python -c "import urllib.parse; print(urllib.parse.quote('/Workspace/Users/fcamifox@gmail.com/proyecto_final_formula1/reversion/$NOTEBOOK', safe=''))")
 
           curl -f -s \
             -X GET \
@@ -1797,7 +1796,7 @@ jobs:
 
       run: |
 
-        DEST_PATH="/Workspace/Users/fcamifox@gmail.com/proyecto_final_formula1/Reversion"
+        DEST_PATH="/Workspace/Users/fcamifox@gmail.com/proyecto_final_formula1/reversion"
         echo "Creando directorio:"
         echo "$DEST_PATH"
 
