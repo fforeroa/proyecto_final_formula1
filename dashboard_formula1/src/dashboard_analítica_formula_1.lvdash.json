@@ -1,0 +1,336 @@
+{
+  "datasets": [
+    {
+      "catalog": "formula1",
+      "displayName": "Seasonal Formula One Driver Performance Summary",
+      "name": "1fbaee87",
+      "queryLines": [
+        "\r\n",
+        "WITH resumen_piloto AS (\r\n",
+        "  SELECT\r\n",
+        "    r.temporada,\r\n",
+        "    d.id_piloto,\r\n",
+        "    d.nombre_piloto,\r\n",
+        "    d.nacionalidad,\r\n",
+        "    COUNT(*) AS numero_carreras,\r\n",
+        "    SUM(r.puntos) AS puntos_totales,\r\n",
+        "    COUNT_IF(r.is_win) AS numero_de_victorias,\r\n",
+        "    COUNT_IF(r.is_podium) AS numero_de_podiums\r\n",
+        "  FROM\r\n",
+        "    formula1.gold.fact_resultado_sesion r\r\n",
+        "      JOIN formula1.gold.dim_piloto d\r\n",
+        "        ON r.id_piloto = d.id_piloto\r\n",
+        "  GROUP BY\r\n",
+        "    r.temporada,\r\n",
+        "    d.id_piloto,\r\n",
+        "    d.nombre_piloto,\r\n",
+        "    d.nacionalidad\r\n",
+        "),\r\n",
+        "resumen as (\r\n",
+        "SELECT\r\n",
+        "  temporada,\r\n",
+        "  id_piloto,\r\n",
+        "  nombre_piloto,\r\n",
+        "  nacionalidad,\r\n",
+        "  RANK() OVER (PARTITION BY temporada ORDER BY puntos_totales DESC, numero_de_victorias DESC) AS standing,\r\n",
+        "  numero_carreras,\r\n",
+        "  puntos_totales,\r\n",
+        "  numero_de_victorias,\r\n",
+        "  numero_de_podiums\r\n",
+        "FROM\r\n",
+        "  resumen_piloto),\r\n",
+        "metricas_piloto as (\r\n",
+        "select \r\n",
+        "nombre_piloto,\r\n",
+        "sum(numero_carreras) as numero_carrreas,\r\n",
+        "sum(numero_de_podiums) as total_podiums,\r\n",
+        "sum(numero_de_victorias) as total_victorias,\r\n",
+        "sum (case when standing = 1 then 1 else 0 end) as total_campeonatos\r\n",
+        "from \r\n",
+        "resumen\r\n",
+        "group by nombre_piloto\r\n",
+        "having total_campeonatos >= 1 )\r\n",
+        "select\r\n",
+        "nombre_piloto,\r\n",
+        "numero_carrreas,\r\n",
+        "total_podiums,\r\n",
+        "total_victorias,\r\n",
+        "total_campeonatos ,\r\n",
+        "(total_campeonatos * 100)+ (total_victorias *10) + (total_victorias* 3) as puntaje_relevante\r\n",
+        "from  metricas_piloto\r\n",
+        "order by puntaje_relevante desc\r\n",
+        "limit 10;"
+      ],
+      "schema": "gold"
+    }
+  ],
+  "pages": [
+    {
+      "displayName": "Pilotos dominantes de todos los tiempos",
+      "layout": [
+        {
+          "position": {
+            "height": 6,
+            "width": 7,
+            "x": 0,
+            "y": 0
+          },
+          "widget": {
+            "name": "top-1-pilotos-dominantes-todos-tiempos",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "1fbaee87",
+                  "disaggregated": true,
+                  "fields": [
+                    {
+                      "expression": "`nombre_piloto`",
+                      "name": "nombre_piloto"
+                    },
+                    {
+                      "expression": "`total_victorias`",
+                      "name": "total_victorias"
+                    },
+                    {
+                      "expression": "`total_podiums`",
+                      "name": "total_podiums"
+                    },
+                    {
+                      "expression": "`total_campeonatos`",
+                      "name": "total_campeonatos"
+                    },
+                    {
+                      "expression": "`numero_carrreas`",
+                      "name": "numero_carrreas"
+                    },
+                    {
+                      "expression": "`puntaje_relevante`",
+                      "name": "puntaje_relevante"
+                    }
+                  ]
+                }
+              }
+            ],
+            "spec": {
+              "data": {
+                "queryName": "main_query"
+              },
+              "encodings": {
+                "columns": [
+                  {
+                    "displayName": "Piloto",
+                    "fieldName": "nombre_piloto"
+                  },
+                  {
+                    "displayName": "Victorias",
+                    "fieldName": "total_victorias"
+                  },
+                  {
+                    "displayName": "Podiums",
+                    "fieldName": "total_podiums"
+                  },
+                  {
+                    "displayName": "Campeonatos",
+                    "fieldName": "total_campeonatos"
+                  },
+                  {
+                    "displayName": "Carreras",
+                    "fieldName": "numero_carrreas"
+                  },
+                  {
+                    "displayName": "Puntaje relevante",
+                    "fieldName": "puntaje_relevante"
+                  }
+                ]
+              },
+              "frame": {
+                "showTitle": true,
+                "title": {
+                  "fields": [],
+                  "value": "Top 10 pilotos dominantes de todos los tiempos"
+                }
+              },
+              "version": 2,
+              "widgetType": "table"
+            }
+          }
+        },
+        {
+          "position": {
+            "height": 6,
+            "width": 5,
+            "x": 7,
+            "y": 0
+          },
+          "widget": {
+            "name": "b9df860e",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "1fbaee87",
+                  "disaggregated": false,
+                  "fields": [
+                    {
+                      "expression": "SUM(`total_campeonatos`)",
+                      "name": "sum(total_campeonatos)"
+                    },
+                    {
+                      "expression": "`nombre_piloto`",
+                      "name": "nombre_piloto"
+                    }
+                  ]
+                }
+              }
+            ],
+            "spec": {
+              "data": {
+                "queryName": "main_query"
+              },
+              "encodings": {
+                "angle": {
+                  "axis": {
+                    "title": "Campeonatos por piloto"
+                  },
+                  "fieldName": "sum(total_campeonatos)",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "color": {
+                  "fieldName": "nombre_piloto",
+                  "legend": {
+                    "title": "Piloto"
+                  },
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "label": {
+                  "show": true
+                }
+              },
+              "frame": {
+                "showDescription": false,
+                "showTitle": false
+              },
+              "version": 3,
+              "widgetType": "pie"
+            }
+          }
+        },
+        {
+          "position": {
+            "height": 6,
+            "width": 12,
+            "x": 0,
+            "y": 6
+          },
+          "widget": {
+            "name": "puntaje-relevante-por-piloto",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "1fbaee87",
+                  "disaggregated": false,
+                  "fields": [
+                    {
+                      "expression": "SUM(`puntaje_relevante`)",
+                      "name": "sum(puntaje_relevante)"
+                    },
+                    {
+                      "expression": "SUM(`total_victorias`)",
+                      "name": "sum(total_victorias)"
+                    },
+                    {
+                      "expression": "`nombre_piloto`",
+                      "name": "nombre_piloto"
+                    }
+                  ]
+                }
+              }
+            ],
+            "spec": {
+              "data": {
+                "queryName": "main_query"
+              },
+              "encodings": {
+                "color": {
+                  "displayName": "Puntaje relevante",
+                  "fieldName": "sum(puntaje_relevante)",
+                  "format": {
+                    "abbreviation": "compact",
+                    "decimalPlaces": {
+                      "places": 2,
+                      "type": "max"
+                    },
+                    "type": "number-plain"
+                  },
+                  "scale": {
+                    "colorRamp": {
+                      "mode": "scheme",
+                      "scheme": "plasma"
+                    },
+                    "type": "quantitative"
+                  }
+                },
+                "label": {
+                  "show": true,
+                  "text": {
+                    "fieldName": "sum(puntaje_relevante)"
+                  }
+                },
+                "x": {
+                  "axis": {
+                    "title": "Puntaje relevante"
+                  },
+                  "fieldName": "sum(total_victorias)",
+                  "format": {
+                    "abbreviation": "compact",
+                    "decimalPlaces": {
+                      "places": 2,
+                      "type": "max"
+                    },
+                    "type": "number-plain"
+                  },
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "y": {
+                  "fieldName": "nombre_piloto",
+                  "scale": {
+                    "sort": {
+                      "by": "x-reversed"
+                    },
+                    "type": "categorical"
+                  }
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": {
+                  "fields": [],
+                  "value": "Puntaje relevante por piloto"
+                }
+              },
+              "version": 3,
+              "widgetType": "bar"
+            }
+          }
+        }
+      ],
+      "layoutVersion": "GRID_V1",
+      "name": "e67c1dd4",
+      "pageType": "PAGE_TYPE_CANVAS"
+    }
+  ],
+  "uiSettings": {
+    "applyModeEnabled": false,
+    "theme": {
+      "widgetHeaderAlignment": "ALIGNMENT_UNSPECIFIED"
+    }
+  }
+}
