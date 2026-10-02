@@ -285,7 +285,7 @@
           "position": {
             "x": 7,
             "y": 3,
-            "width": 5,
+            "width": 2,
             "height": 2
           }
         },
@@ -335,6 +335,9 @@
                   "scale": {
                     "type": "categorical"
                   }
+                },
+                "label": {
+                  "show": true
                 }
               },
               "data": {
@@ -476,6 +479,51 @@
             "y": 2,
             "width": 4,
             "height": 1
+          }
+        },
+        {
+          "widget": {
+            "name": "puntos",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "bf72d966",
+                  "fields": [
+                    {
+                      "name": "sum(puntos)",
+                      "expression": "SUM(`puntos`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "frame": {
+                "showTitle": true,
+                "title": {
+                  "value": "<span style=\"text-align:center;display:block;\"><span style=\"font-size: 16px;\">Puntos</span></span>",
+                  "fields": []
+                }
+              },
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "sum(puntos)"
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 9,
+            "y": 3,
+            "width": 3,
+            "height": 2
           }
         }
       ],

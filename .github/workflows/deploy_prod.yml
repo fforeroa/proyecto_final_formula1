@@ -1354,9 +1354,14 @@ jobs:
       run: |
             # Reemplaza 'formula1' por 'formula1_prod' ignorando mayúsculas/minúsculas (:gi) 
             sed -i 's/formula1/formula1_prod/gi' src/jpmontoya.lvdash.json
+
+            sed -i 's/formula1/formula1_prod/gi' src/dashboard_analítica_formula_1.lvdash.json
             
             # Valida si ahora sí existe la palabra de producción en el archivo
             grep -qi "formula1_prod" src/jpmontoya.lvdash.json || { echo "No se reemplazó nada"; exit 1; }
+
+             # Valida si ahora sí existe la palabra de producción en el archivo
+            grep -qi "formula1_prod" src/dashboard_analítica_formula_1.lvdash.json || { echo "No se reemplazó nada"; exit 1; }
             
     - name: Validar bundle
       env:
