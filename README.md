@@ -217,3 +217,5 @@ A partir de esos datos, elaboraremos productos analíticos para informes y anál
 Y, por último, diseñaremos la solución para que sea fiable y se gobierne desde el primer día.
 
 Ahora que hemos definido claramente los requisitos del proyecto, enla próxima lección diseñaremos la arquitectura del lago de datos que pueda satisfacer estas necesidades.
+
+## Arquitectura
