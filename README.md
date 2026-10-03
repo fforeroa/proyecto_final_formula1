@@ -222,8 +222,11 @@ Ahora que hemos definido claramente los requisitos del proyecto, enla próxima l
 
 Arquitectura
 Se tienen dos ambientes para el proyecto:
-•	Desarrollo  
+
+•	Desarrollo 
+
 •	Producción 
+
 Cada ambiente esta diferenciado por la cuenta de almacenamiento -datalake- , el workspace de databricks , credencial , conector de acceso , localizaciones externas ,tablas -las mismas pero catalogo diferente- ,esquemas y catalogo.
 
 
@@ -250,12 +253,16 @@ Para nuestra solución se construirá con base en la arquitectura medallion vist
 En la capa raw se dejan los archivos fuente:
 
 •	Circuits.csv
+
 •	Drivers.json
+
 •	Races.csv
+
 •	Constructors.json
 
 Las carpetas que contienen varios archivos json relacionados con lo siguiente:
 •	Sprints
+
 •	Results
 
 <img width="921" height="281" alt="image" src="https://github.com/user-attachments/assets/58f68fb6-099e-4308-9a19-bfaca1c79432" />
