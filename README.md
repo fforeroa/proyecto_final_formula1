@@ -321,4 +321,12 @@ En la capa gold a partir de las transformaciones de las tablas de la capa silver
 
 <img width="240" height="235" alt="image" src="https://github.com/user-attachments/assets/9090dc24-3602-4957-b0d6-ebd356bda24d" />
 
+## Job
+
+En el ambiente de desarrollo se desarrollo en siguiente job -Job Formula 1-  donde primero se corren las tareas relacionadas -notebooks- con la capa bronze, luego las tablas relacionadas con silver, y finalmente las tablas de la capa gold, el la siguiente imagen se observan cómo se configuraron las dependencias.
+
+El cluster utilizado para el funcionamiento del job fue **serveless**.
+
+<img width="921" height="767" alt="image" src="https://github.com/user-attachments/assets/c66d399b-fe36-4bf5-ad39-5580b9570332" />
+
 
