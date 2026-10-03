@@ -220,5 +220,12 @@ Ahora que hemos definido claramente los requisitos del proyecto, enla próxima l
 
 ## Arquitectura
 
+Arquitectura
+Se tienen dos ambientes para el proyecto:
+•	Desarrollo  
+•	Producción 
+Cada ambiente esta diferenciado por la cuenta de almacenamiento -datalake- , el workspace de databricks , credencial , conector de acceso , localizaciones externas ,tablas -las mismas pero catalogo diferente- ,esquemas y catalogo.
+
+
 <img width="970" height="327" alt="image" src="https://github.com/user-attachments/assets/3bcea1f3-676d-4cc9-983f-db2aa209b626" />
 
