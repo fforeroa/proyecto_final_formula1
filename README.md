@@ -248,11 +248,13 @@ Cada ambiente esta diferenciado por la cuenta de almacenamiento -datalake- , el 
 Para nuestra solución se construirá con base en la arquitectura medallion vista en clase donde se tienen tres capas: raw, bronze, silver y gold.
 
 En la capa raw se dejan los archivos fuente:
+
 •	Circuits.csv
 •	Drivers.json
 •	Races.csv
 •	Constructors.json
-Las carpetas que contienen varios archivos json relacionados con lo siguiente
+
+Las carpetas que contienen varios archivos json relacionados con lo siguiente:
 •	Sprints
 •	Results
 
