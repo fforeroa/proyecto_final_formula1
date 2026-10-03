@@ -243,6 +243,18 @@ Cada ambiente esta diferenciado por la cuenta de almacenamiento -datalake- , el 
 | **Credencial de conector de acceso** | credential_formula1 | credential_formula1_prod |
 | **Conector de acceso** | acconnector_dev_formula_1 | acconnector_prod_formula_1 |
 
-
 <img width="970" height="327" alt="image" src="https://github.com/user-attachments/assets/3bcea1f3-676d-4cc9-983f-db2aa209b626" />
+
+Para nuestra solución se construirá con base en la arquitectura medallion vista en clase donde se tienen tres capas: raw, bronze, silver y gold.
+
+En la capa raw se dejan los archivos fuente:
+•	Circuits.csv
+•	Drivers.json
+•	Races.csv
+•	Constructors.json
+Las carpetas que contienen varios archivos json relacionados con lo siguiente
+•	Sprints
+•	Results
+
+<img width="921" height="281" alt="image" src="https://github.com/user-attachments/assets/58f68fb6-099e-4308-9a19-bfaca1c79432" />
 
