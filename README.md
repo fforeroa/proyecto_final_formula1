@@ -251,7 +251,9 @@ Cada ambiente esta diferenciado por la cuenta de almacenamiento -datalake- , el 
 
 Para nuestra solución se construirá con base en la arquitectura medallion vista en clase donde se tienen tres capas: raw, bronze, silver y gold.
 
-En la capa raw se dejan los archivos fuente:
+**Capa raw:**
+
+En la capa **raw** se dejan los archivos fuente:
 
 •	circuits.csv
 
@@ -339,9 +341,9 @@ Cada sección de despliegue esta debidamente documentada y configurada en cada t
 
 Las evidencias acerca del despliegue a producción están en tres enlaces de videos , en la carpeta de evidencias
 
-## Dasboards
+## Dashboards
 
-Se desarrollaron 2 dasboards:
+Se desarrollaron 2 dashboards:
 
 • Datos relevantes del piloto colombiano Juan Pablo Montoya
 
