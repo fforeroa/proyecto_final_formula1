@@ -243,9 +243,9 @@ Cada ambiente esta diferenciado por la cuenta de almacenamiento -datalake- , el 
 | **External location gold** | exlt-gold | exlt-gold_prod |
 | **External location metastore** | exlt-metastore | exlt-metastore_prod |
 | **External location raw** | exlt-raw | exlt-raw_prod |
-| **Credencial de conector de acceso** | credential_formula1 | credential_formula1_prod |
-| **Conector de acceso** | acconnector_dev_formula_1 | acconnector_prod_formula_1 |
-| **Jobs** | Job_Formula_1 | Job_Formula_1_prod |
+| **Credenciales de conector de acceso** | credential_formula1 | credential_formula1_prod |
+| **Conectores de acceso** | acconnector_dev_formula_1 | acconnector_prod_formula_1 |
+| **Jobs** | Job_Formula_1 | Job_Formula_1_prod  |
 
 <img width="970" height="327" alt="image" src="https://github.com/user-attachments/assets/3bcea1f3-676d-4cc9-983f-db2aa209b626" />
 
@@ -267,9 +267,8 @@ Las carpetas que contienen varios archivos json relacionados con lo siguiente:
 
 •	results
 
-<img width="921" height="281" alt="image" src="https://github.com/user-attachments/assets/58f68fb6-099e-4308-9a19-bfaca1c79432" />
-
 ***Capa Bronze:***
+
 En la capa bronze se construyen las tablas con el nombre de las fuentes respectivas de los datos, estableciendo los esquemas de datos, en espacial de la información que bien de  los archivos json. Se agrega las columnas relacionadas con la metadata para tener un proceso de trazabilidad del linaje de datos como los con archivo_fuente e ingesta timestamp. 
 Las tablas son las siguientes:
 
@@ -307,5 +306,27 @@ Las tablas son las siguientes:
 •	ref_nacionalidad_region
 
 <img width="254" height="375" alt="image" src="https://github.com/user-attachments/assets/1b96bf78-4cb3-4f0a-9b0d-9cf32d040443" />
+
+***Capa gold:***
+
+En la capa gold a partir de las transformaciones de las tablas de la capa silver, se construye una bodega de datos con las siguientes dimensiones y fact_table, la documentación y las columnas seleccionadas para cada dimensión  y fact ,del cómo se construyeron está en cada notebook:
+
+•	Dim_Carrerra :  Join entre la data silver de circuitos y carreras a través de la llave id_circuito.
+
+•	Dim_Piloto: A partir de la tabla silver pilotos.
+
+•	Dim_Constructor : A partir de la tabla silver constructores.
+
+•	Fact_resultado_sesion: A partir  de la unión de las tablas silver de sprints y results.
+
+<img width="240" height="235" alt="image" src="https://github.com/user-attachments/assets/9090dc24-3602-4957-b0d6-ebd356bda24d" />
+
+## Job
+
+En el ambiente de desarrollo se desarrollo en siguiente job -Job Formula 1-  donde primero se corren las tareas relacionadas -notebooks- con la capa bronze, luego las tablas relacionadas con silver, y finalmente las tablas de la capa gold, el la siguiente imagen se observan cómo se configuraron las dependencias.
+
+El cluster utilizado para el funcionamiento del job fue **serveless**.
+
+<img width="921" height="767" alt="image" src="https://github.com/user-attachments/assets/c66d399b-fe36-4bf5-ad39-5580b9570332" />
 
 
