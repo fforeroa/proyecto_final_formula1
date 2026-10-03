@@ -227,5 +227,22 @@ Se tienen dos ambientes para el proyecto:
 Cada ambiente esta diferenciado por la cuenta de almacenamiento -datalake- , el workspace de databricks , credencial , conector de acceso , localizaciones externas ,tablas -las mismas pero catalogo diferente- ,esquemas y catalogo.
 
 
+| Objeto | Desarrollo | Producción |
+| :--- | :--- | :--- |
+| **Catalogo** | Formula1 | Formula1_prod |
+| **Workspace Databricks** | azdatbrfforerodev01 | azdatbrfforeroprod |
+| **Datalake** | datalakefforero03 | datalakefforeroprod03 |
+| **Esquema bronze** | bronze | bronze |
+| **Esquema silver** | silver | silver |
+| **Esquema gold** | gold | gold |
+| **External location bronze** | exlt-bronze | exlt-bronze_prod |
+| **External location silver** | exlt-silver | exlt-silver_prod |
+| **External location gold** | exlt-gold | exlt-gold_prod |
+| **External location metastore** | exlt-metastore | exlt-metastore_prod |
+| **External location raw** | exlt-raw | exlt-raw_prod |
+| **Credencial de conector de acceso** | credential_formula1 | credential_formula1_prod |
+| **Conector de acceso** | acconnector_dev_formula_1 | acconnector_prod_formula_1 |
+
+
 <img width="970" height="327" alt="image" src="https://github.com/user-attachments/assets/3bcea1f3-676d-4cc9-983f-db2aa209b626" />
 
