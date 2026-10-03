@@ -245,6 +245,7 @@ Cada ambiente esta diferenciado por la cuenta de almacenamiento -datalake- , el 
 | **External location raw** | exlt-raw | exlt-raw_prod |
 | **Credencial de conector de acceso** | credential_formula1 | credential_formula1_prod |
 | **Conector de acceso** | acconnector_dev_formula_1 | acconnector_prod_formula_1 |
+| **Jobs** | Job_Formula_1 | Job_Formula_1_prod |
 
 <img width="970" height="327" alt="image" src="https://github.com/user-attachments/assets/3bcea1f3-676d-4cc9-983f-db2aa209b626" />
 
