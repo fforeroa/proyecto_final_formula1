@@ -1,7 +1,7 @@
 # Proyecto_final_formula1
 Proyecto final curso databricks smartdata consulting
 ## Introducción
-Este proyecto se basa en el deporte del motor Fórmula 1.
+Este proyecto se basa en el deporte del motor **Fórmula 1**.
 
 Para asegurarnos de que todo el mundo está cómodo, empezaremos con un breve resumen
 de cómo está estructurada la Fórmula 1.
