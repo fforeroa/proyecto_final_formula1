@@ -220,7 +220,9 @@ Ahora que hemos definido claramente los requisitos del proyecto, enla próxima l
 
 ## Arquitectura
 
-Arquitectura
+<img width="1536" height="1024" alt="69250f5f-8623-43bb-adb0-24812ac3202e" src="https://github.com/user-attachments/assets/7da81dde-d41a-4af4-87a0-381797a6056e" />
+
+
 Se tienen dos ambientes para el proyecto:
 
 •	Desarrollo 
