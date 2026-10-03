@@ -252,19 +252,37 @@ Para nuestra solución se construirá con base en la arquitectura medallion vist
 
 En la capa raw se dejan los archivos fuente:
 
-•	Circuits.csv
+•	circuits.csv
 
-•	Drivers.json
+•	drivers.json
 
-•	Races.csv
+•	races.csv
 
-•	Constructors.json
+•	constructors.json
 
 Las carpetas que contienen varios archivos json relacionados con lo siguiente:
 
-•	Sprints
+•	sprints
 
-•	Results
+•	results
 
 <img width="921" height="281" alt="image" src="https://github.com/user-attachments/assets/58f68fb6-099e-4308-9a19-bfaca1c79432" />
+
+***Capa Bronze:***
+En la capa bronze se construyen las tablas con el nombre de las fuentes respectivas de los datos, estableciendo los esquemas de datos, en espacial de la información que bien de  los archivos json. Se agrega las columnas relacionadas con la metadata para tener un proceso de trazabilidad del linaje de datos como los con archivo_fuente e ingesta timestamp. 
+Las tablas son las siguientes:
+
+•	circuits
+
+•	races
+
+•	constructors
+
+•	drivers
+
+•	results
+
+•	sprints
+
+<img width="267" height="258" alt="image" src="https://github.com/user-attachments/assets/7e1486ed-4bc6-49f5-9e5b-d5c482436a41" />
 
