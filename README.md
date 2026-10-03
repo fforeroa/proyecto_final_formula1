@@ -148,3 +148,72 @@ Esto nos da la oportunidad de manejar diferentes formatos de archivo y patrones 
 
 Ahora que entendemos cómo está estructurado el deporte y cómo se representa la estructura en los datos, el siguiente paso es definir lo que queremos construir con estos datos.
 
+## Requerimientos
+
+En esta parte vamos a definir claramente los requisitos de nuestro proyecto.
+
+Agruparemos los requisitos del proyecto en cuatro áreas principales: requisitos de ingestión de datos, requisitos de transformación de datos, requisitos analíticos y de elaboración de informes y, por último, requisitos no funcionales.
+
+Empecemos por los requisitos de ingesta de datos.
+
+En primer lugar, necesitamos ingerir los seis conjuntos de datos: circuitos, carreras, constructores, pilotos, resultados y sprints.
+
+Y como saben, los datos se proporcionan en una mezcla de formatos CSV y JSON.
+
+Y durante la ingestión de esos archivos, tenemos que aplicar el esquema correcto, incluidos los nombres de columna y los tipos de datos adecuados.
+
+También tenemos que añadir columnas de auditoría, como la fecha y hora de ingesta y el nombre del archivo de origen, para que se puedan rastrear y validar los datos.
+
+Y todos los datos deben almacenarse en formato Delta desde el principio.
+
+Y a lo largo de este proceso, tenemos que asegurarnos de que se mantienen la integridad y la fiabilidad de los datos.
+
+E inicialmente implementaremos una carga completa del conjunto de datos.
+
+Y más adelante en el curso, mejoraremos la solución para que admita cargas de datos incrementales.
+
+Y una vez ingeridos los datos, hay que transformarlos en un modelo de datos estructurado y fiable.
+
+Durante la transformación, limpiaremos y normalizaremos los datos para garantizar su coherencia en todos los conjuntos de datos.
+
+Aplicaremos convenciones de nomenclatura coherentes y remodelaremos los datos cuando sea necesario, incluido el aplanamiento de estructuras anidadas.
+
+Eliminaremos las columnas innecesarias y realizaremos comprobaciones básicas de la calidad de los datos, como la gestión de valores clave nulos y registros duplicados.
+
+Conservaremos las claves de negocio como temporada,ronda, ID de conductor, ID de constructor, etc., para que se puedamantener la relación entre las entidades.
+
+Se traduciran las columnas del inglés al español y valores de columnas como país, nacionalidad,región, estado, etc en el porceso de transformación de varias tablas en silver
+
+El conjunto de datos transformado debe preparar los datos para las cargas de trabajo analíticas y de elaboración de informes en la capa gold.
+
+A partir de los datos transformados, ahora tenemos que producir perspectivas significativas.
+
+En concreto, las clasificaciones de los pilotos deberían estar disponibles para cada año de carrera.
+
+La clasificación de constructores también debe generarse para cada año de carrera.
+
+Y la solución debe permitir el análisis de los impulsores y constructores dominantes a lo largo del tiempo.
+
+Y debe permitir el análisis tanto de las temporadas recientes como de los datos históricos.
+
+Además, los conjuntos de datos finales deben permitir la elaboración de informes y consultas analíticas eficaces.
+
+Además de los requisitos funcionales, también tenemos algunos requisitos no funcionales.
+
+Si hay una carrera ese fin de semana, el pipeline debe procesar los nuevos datos.
+
+Si no hay datos nuevos, el proceso debería completarse sin fallos.
+
+También debemos ser capaces de supervisar la ejecución de la tubería, volvera ejecutar trabajos fallidos y configurar alertas en caso de fallos.
+
+También debe permitirnos corregir los datos cuando sea necesario.
+
+Ingeriremos múltiples conjuntos de datos y los almacenaremos en formato Delta desde el principio.
+
+Transformaremos los datos en capas estructuradas y fiables.
+
+A partir de esos datos, elaboraremos productos analíticos para informes y análisis.
+
+Y, por último, diseñaremos la solución para que sea fiable y se gobierne desde el primer día.
+
+Ahora que hemos definido claramente los requisitos del proyecto, enla próxima lección diseñaremos la arquitectura del lago de datos que pueda satisfacer estas necesidades.
