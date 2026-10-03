@@ -148,5 +148,3 @@ Esto nos da la oportunidad de manejar diferentes formatos de archivo y patrones 
 
 Ahora que entendemos cómo está estructurado el deporte y cómo se representa la estructura en los datos, el siguiente paso es definir lo que queremos construir con estos datos.
 
-
-de pasar a diseñar la arquitectura.
