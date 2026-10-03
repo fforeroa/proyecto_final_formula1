@@ -286,3 +286,23 @@ Las tablas son las siguientes:
 
 <img width="267" height="258" alt="image" src="https://github.com/user-attachments/assets/7e1486ed-4bc6-49f5-9e5b-d5c482436a41" />
 
+En la capa silver se realizan varias transformaciones relacionadas con la calidad de datos y reglas del negocio, y traducción al español de varias columnas y valores de columnas documentadas en cada notebook donde se tienen las siguientes tablas. Adicionalmente se construirá una tabla de región_nacionalidad para hacer join non las tablas de constructores y pilotos. 
+Las tablas son las siguientes:
+
+•	Circuitos
+
+•	Carreras
+
+•	Pilotos
+
+•	Constructores
+
+•	Results
+
+•	Sprints
+
+•	ref_nacionalidad_region
+
+<img width="254" height="375" alt="image" src="https://github.com/user-attachments/assets/1b96bf78-4cb3-4f0a-9b0d-9cf32d040443" />
+
+
