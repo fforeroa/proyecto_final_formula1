@@ -249,8 +249,6 @@ Cada ambiente esta diferenciado por la cuenta de almacenamiento -datalake- , el 
 | **Conectores de acceso** | acconnector_dev_formula_1 | acconnector_prod_formula_1 |
 | **Jobs** | Job_Formula_1 | Job_Formula_1_prod  |
 
-<img width="970" height="327" alt="image" src="https://github.com/user-attachments/assets/3bcea1f3-676d-4cc9-983f-db2aa209b626" />
-
 Para nuestra solución se construirá con base en la arquitectura medallion vista en clase donde se tienen tres capas: raw, bronze, silver y gold.
 
 En la capa raw se dejan los archivos fuente:
