@@ -329,4 +329,29 @@ El cluster utilizado para el funcionamiento del job fue **serveless**.
 
 <img width="921" height="767" alt="image" src="https://github.com/user-attachments/assets/c66d399b-fe36-4bf5-ad39-5580b9570332" />
 
+## Despliegue a producción
+
+Para el despliegue a producción se desarrolló un archivo de despliegue donde se crean y despliegan los diferentes objetos relacionados, hacia el ambiente de producción al inicio de la sección de arquitectura -ver tabla-, de manera automática a través del archivo deploy_prod.yml.
+
+Un requisito importante es determinar la configuración de los **token** de desarrollo y producción y los **host** de estos dos ambientes para un despliegue exitoso de los objetos.
+
+Cada sección de despliegue esta debidamente documentada y configurada en cada tarea del archivo de despliegue.
+
+Las evidencias acerca del despliegue a producción están en tres enlaces de videos , en la carpeta de evidencias
+
+## Dasboards
+
+Se desarrollaron 2 dasboards:
+
+• Datos relevantes del piloto colombiano Juan Pablo Montoya
+
+• Top 10 mejores pilotos de todos los tiempos
+
+Se desarrollaron en el ambiente de desarrollo y luego se desplegaron al ambiente de producción creando un **bundle** y determinando el **warehouse_id** -modo parámetro- de cada ambiente para un despliegue exitoso.
+
+Este despliegue se configuro en el archivo de despliegue **deploy_prod.yml** .
+
+
+
+
 
