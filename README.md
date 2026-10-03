@@ -219,3 +219,6 @@ Y, por último, diseñaremos la solución para que sea fiable y se gobierne desd
 Ahora que hemos definido claramente los requisitos del proyecto, enla próxima lección diseñaremos la arquitectura del lago de datos que pueda satisfacer estas necesidades.
 
 ## Arquitectura
+
+<img width="970" height="327" alt="image" src="https://github.com/user-attachments/assets/3bcea1f3-676d-4cc9-983f-db2aa209b626" />
+
